@@ -40,6 +40,8 @@ public class KoinexBinanceInterTrade {
 		
 		calculatePricePercentageDiffXRP( "XRP", "XRPBTC", koinexPrices, binancePriceMap, dollarRate);
 		
+		calculatePricePercentageDiff( "TUSD", "TUSDUSDT", koinexPrices, binancePriceMap, dollarRate);
+
 		calculatePricePercentageDiffXRP( "OMG", "OMGBTC", koinexPrices, binancePriceMap, dollarRate);
 		
 		calculatePricePercentageDiffXRP( "REQ", "REQBTC", koinexPrices, binancePriceMap, dollarRate);
