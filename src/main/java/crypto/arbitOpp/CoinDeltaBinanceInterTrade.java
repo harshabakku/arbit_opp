@@ -11,12 +11,14 @@ import java.util.Map;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
 
 /**
  * Hello world!
  *
  */
-public class App {
+public class CoinDeltaBinanceInterTrade {
 	public static void main(String[] args) throws Exception {
 		JSONObject koinexPrices = getKoinexData();
 		Map<String, Double> binancePriceMap = getBinanceData();
@@ -103,6 +105,9 @@ public class App {
 	}
 
 	public static JSONObject getKoinexData() throws Exception {
+		Document doc = Jsoup.connect("https://coindelta.com/market?active=BTC-INR").followRedirects(true).timeout(30000).userAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.152 Safari/537.36").get();
+		System.out.println(doc.data());
+		
 		String url = "https://koinex.in/api/ticker";
 		URL obj = new URL(url);
 		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
@@ -113,7 +118,7 @@ public class App {
 		JSONParser jsonParser = new JSONParser();
 		JSONObject jsonObject = (JSONObject) jsonParser.parse(new InputStreamReader(inputStream, "UTF-8"));
 		JSONObject prices = (JSONObject) jsonObject.get("prices");
-		System.out.println("koinex Prices "+ prices);
+		System.out.println("koinex Prices "+ jsonObject.toString());
 		return prices;
 	}
 
