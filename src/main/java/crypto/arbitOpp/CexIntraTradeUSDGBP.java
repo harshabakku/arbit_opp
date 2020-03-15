@@ -94,7 +94,7 @@ public class CexIntraTradeUSDGBP {
 
 	private static Double getDollarRateInEuro() throws Exception {
 
-		String url = "http://data.fixer.io/latest?base=USD&symbols=USD,GBP&access_key=e7f958395688aca077db38a8bedb6508";
+		String url = "http://data.fixer.io/api/latest?access_key=e7f958395688aca077db38a8bedb6508&symbols=USD";
 		URL obj = new URL(url);
 		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 		con.setRequestMethod("GET");
@@ -104,7 +104,9 @@ public class CexIntraTradeUSDGBP {
 		JSONParser jsonParser = new JSONParser();
 		JSONObject jsonObject = (JSONObject) jsonParser.parse(new InputStreamReader(inputStream, "UTF-8"));
 		JSONObject rates = (JSONObject) jsonObject.get("rates");
-		Double dollarRate = (Double) rates.get("GBP");
+		//base currency is eur here
+		Double usd = (Double) rates.get("USD");
+		Double dollarRate = 1.0/usd;
 		return dollarRate;
 	}
 

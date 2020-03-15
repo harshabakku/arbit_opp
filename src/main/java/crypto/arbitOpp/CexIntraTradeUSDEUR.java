@@ -41,8 +41,10 @@ public class CexIntraTradeUSDEUR {
 		}
 		System.out.println(cryptoCoins);
 		for (String coin : cryptoCoins) {
+			try {
 			calculatePricePercentageDiff(coin, cexPairTickers, oneDollarInEuro);
-		}
+			}catch(Exception e) {}
+			}
 
 	}
 
@@ -91,7 +93,7 @@ public class CexIntraTradeUSDEUR {
 
 	private static Double getDollarRateInEuro() throws Exception {
 
-		String url = "https://api.fixer.io/latest?base=USD&symbols=USD,EUR";
+		String url = "http://data.fixer.io/api/latest?access_key=e7f958395688aca077db38a8bedb6508&symbols=USD";
 		URL obj = new URL(url);
 		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 		con.setRequestMethod("GET");
@@ -101,7 +103,9 @@ public class CexIntraTradeUSDEUR {
 		JSONParser jsonParser = new JSONParser();
 		JSONObject jsonObject = (JSONObject) jsonParser.parse(new InputStreamReader(inputStream, "UTF-8"));
 		JSONObject rates = (JSONObject) jsonObject.get("rates");
-		Double dollarRate = (Double) rates.get("EUR");
+		//base currency is eur here
+		Double usd = (Double) rates.get("USD");
+		Double dollarRate = 1.0/usd;
 		return dollarRate;
 	}
 
