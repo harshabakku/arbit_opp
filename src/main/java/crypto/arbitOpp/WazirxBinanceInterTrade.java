@@ -16,7 +16,7 @@ import org.json.simple.parser.JSONParser;
  * Hello world!
  *
  */
-public class KoinexBinanceInterTrade {
+public class WazirxBinanceInterTrade {
 	public static void main(String[] args) throws Exception {
 		JSONObject koinexPrices = getKoinexData();
 		Map<String, Double> binancePriceMap = getBinanceData();

@@ -2,9 +2,6 @@ package crypto.arbitOpp;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.math.RoundingMode;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.HashMap;
@@ -19,66 +16,47 @@ import org.json.simple.parser.JSONParser;
  * Hello world!
  *
  */
-public class KoinexCexInterTrade {
+public class WazirxCexInterTrade {
 	public static void main(String[] args) throws Exception {
 
-		BigInteger a = new BigInteger("100000000000000000000");
-		
-		Long transferAmount = a.longValue();
-		System.out.println(transferAmount);
-		
-		BigDecimal amount = new BigDecimal(a).divide(new BigDecimal("1000000000000000000"));
 
-		amount = amount.setScale(8, RoundingMode.FLOOR);
-		System.out.println("Transfer event amount " + amount.toPlainString() + " ");
-
-		//
-		//
-		// JSONObject koinexPrices = getKoinexData();
-		// Map<String, Map<String, Double>> cexPairTickers = getCexData();
-		//
-		// Double dollarRate = getDollarRate();
-		// System.out.println(" dollar rate should be around 64 "+ dollarRate);
-		//
-		// System.out.println(calculatePercentageDif(new Double(1),new Double( 1.3)) + "
-		// should be 30 percent");
-		//
-		// System.out.println(calculatePercentageDif(new Double(1),new Double( 0.7))+ "
-		// should be -30 percent");
-		//
-		// System.out.println(calculatePercentageDif(new Double(3),new Double( 3.5))+ "
-		// should be 16.66666666 percent");
-		//
-		// System.out.println(" ");
-		//
-		//
-		// calculatePricePercentageDiff( "BTC", "BTC:USD", koinexPrices, cexPairTickers,
-		// dollarRate);
-		//
-		// calculatePricePercentageDiff( "ETH", "ETH:USD", koinexPrices, cexPairTickers,
-		// dollarRate);
-		//
-		// calculatePricePercentageDiff( "BCH", "BCH:USD", koinexPrices, cexPairTickers,
-		// dollarRate);
-		//
-		// calculatePricePercentageDiff( "XRP", "XRP:USD", koinexPrices, cexPairTickers,
-		// dollarRate);
-		//
-		//
-		// System.out.println("percentage dif for euro rate ");
-		// Double oneDollarInEuro = getDollarRateInINR();
-		//
-		// calculatePricePercentageDiff( "BTC", "BTC:EUR", koinexPrices, cexPairTickers,
-		// oneDollarInEuro);
-		//
-		// calculatePricePercentageDiff( "ETH", "ETH:EUR", koinexPrices, cexPairTickers,
-		// oneDollarInEuro);
-		//
-		// calculatePricePercentageDiff( "BCH", "BCH:EUR", koinexPrices, cexPairTickers,
-		// oneDollarInEuro);
-		//
-		// calculatePricePercentageDiff( "XRP", "XRP:EUR", koinexPrices, cexPairTickers,
-		// oneDollarInEuro);
+		
+		
+		 JSONObject wazirxPrices = getWazirxData();
+		 Map<String, Map<String, Double>> cexPairTickers = getCexData();
+		
+		 Double dollarRate = getDollarRate();
+		 System.out.println(" dollar rate should be around 64 "+ dollarRate);
+		
+		 System.out.println(" ");
+		
+		 calculatePricePercentageDiff( "BTC", "BTC:USD", wazirxPrices, cexPairTickers,
+		 dollarRate);
+		
+		 calculatePricePercentageDiff( "ETH", "ETH:USD", wazirxPrices, cexPairTickers,
+		 dollarRate);
+		
+		 calculatePricePercentageDiff( "BCH", "BCH:USD", wazirxPrices, cexPairTickers,
+		 dollarRate);
+		
+		 calculatePricePercentageDiff( "XRP", "XRP:USD", wazirxPrices, cexPairTickers,
+		 dollarRate);
+		
+		
+		 System.out.println("percentage dif for euro rate ");
+		 Double oneDollarInEuro = getDollarRateInINR();
+		
+		 calculatePricePercentageDiff( "BTC", "BTC:EUR", wazirxPrices, cexPairTickers,
+		 oneDollarInEuro);
+		
+		 calculatePricePercentageDiff( "ETH", "ETH:EUR", wazirxPrices, cexPairTickers,
+		 oneDollarInEuro);
+		
+		 calculatePricePercentageDiff( "BCH", "BCH:EUR", wazirxPrices, cexPairTickers,
+		 oneDollarInEuro);
+		
+		 calculatePricePercentageDiff( "XRP", "XRP:EUR", wazirxPrices, cexPairTickers,
+		 oneDollarInEuro);
 
 	}
 
@@ -150,7 +128,7 @@ public class KoinexCexInterTrade {
 		return dollarRate;
 	}
 
-	public static JSONObject getKoinexData() throws Exception {
+	public static JSONObject getWazirxData() throws Exception {
 		String url = "https://koinex.in/api/ticker";
 		URL obj = new URL(url);
 		HttpURLConnection con = (HttpURLConnection) obj.openConnection();

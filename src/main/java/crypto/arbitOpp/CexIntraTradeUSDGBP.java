@@ -94,7 +94,7 @@ public class CexIntraTradeUSDGBP {
 
 	private static Double getDollarRateInEuro() throws Exception {
 
-		String url = "https://api.fixer.io/latest?base=USD&symbols=USD,GBP";
+		String url = "http://data.fixer.io/latest?base=USD&symbols=USD,GBP&access_key=e7f958395688aca077db38a8bedb6508";
 		URL obj = new URL(url);
 		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 		con.setRequestMethod("GET");

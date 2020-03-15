@@ -1,4 +1,4 @@
-package crypto.arbitOpp;
+package crypto.arbitOpp.deprecated;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -11,14 +11,12 @@ import java.util.Map;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 
 /**
  * Hello world!
  *
  */
-public class CoinDeltaBinanceInterTrade {
+public class KoinexBinanceInterTrade {
 	public static void main(String[] args) throws Exception {
 		JSONObject koinexPrices = getKoinexData();
 		Map<String, Double> binancePriceMap = getBinanceData();
@@ -42,6 +40,28 @@ public class CoinDeltaBinanceInterTrade {
 		
 		calculatePricePercentageDiffXRP( "XRP", "XRPBTC", koinexPrices, binancePriceMap, dollarRate);
 		
+		calculatePricePercentageDiff( "TUSD", "TUSDUSDT", koinexPrices, binancePriceMap, dollarRate);
+
+		calculatePricePercentageDiffXRP( "OMG", "OMGBTC", koinexPrices, binancePriceMap, dollarRate);
+		
+		calculatePricePercentageDiffXRP( "REQ", "REQBTC", koinexPrices, binancePriceMap, dollarRate);
+		
+		calculatePricePercentageDiffXRP( "ZRX", "ZRXBTC", koinexPrices, binancePriceMap, dollarRate);
+		
+//		calculatePricePercentageDiffXRP( "GNT", "GNTBTC", koinexPrices, binancePriceMap, dollarRate);
+		
+		calculatePricePercentageDiffXRP( "BAT", "BATBTC", koinexPrices, binancePriceMap, dollarRate);
+		
+		calculatePricePercentageDiffXRP( "AE", "AEBTC", koinexPrices, binancePriceMap, dollarRate);
+		
+		calculatePricePercentageDiffXRP( "TRX", "TRXBTC", koinexPrices, binancePriceMap, dollarRate);
+		
+		calculatePricePercentageDiffXRP( "XLM", "XLMBTC", koinexPrices, binancePriceMap, dollarRate);
+		
+
+		calculatePricePercentageDiffXRP( "XRP", "QTUMBTC", koinexPrices, binancePriceMap, dollarRate);
+		
+		//write all data append to a csv file, whenever the code is run for now including timestamp
 		
 		
 	}
@@ -70,7 +90,7 @@ public class CoinDeltaBinanceInterTrade {
 		
 		Double binancePriceInINR = binancePriceInUSD*dollarRate;
 		
-		System.out.println(koinexPair + ": Koinex: "+ koinexPrice+ ", BinanceUSD: "+ binancePriceInUSD +", inINR: " +binancePriceInINR);
+		System.out.println(koinexPair+" "+ binancePair + ": Koinex: "+ koinexPrice+ ", BinanceUSD: "+ binancePriceInUSD +", inINR: " +binancePriceInINR);
 		
 		System.out.println("koinex to binance: "+ calculatePercentageDif(koinexPrice, binancePriceInINR));
 		System.out.println("binance to koinex: "+ calculatePercentageDif(binancePriceInINR, koinexPrice));
@@ -90,7 +110,7 @@ public class CoinDeltaBinanceInterTrade {
 
 	private static Double getDollarRate() throws Exception {
 
-		String url = "https://api.fixer.io/latest?base=USD&symbols=USD,INR";
+		String url = "http://data.fixer.io/api/latest?access_key=e7f958395688aca077db38a8bedb6508&symbols=USD,INR";
 		URL obj = new URL(url);
 		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
 		con.setRequestMethod("GET");
@@ -100,14 +120,14 @@ public class CoinDeltaBinanceInterTrade {
 		JSONParser jsonParser = new JSONParser();
 		JSONObject jsonObject = (JSONObject) jsonParser.parse(new InputStreamReader(inputStream, "UTF-8"));
 		JSONObject rates = (JSONObject) jsonObject.get("rates");
-		Double dollarRate = (Double) rates.get("INR");
+		//base currency is eur here
+		Double inr = (Double) rates.get("INR");
+		Double usd = (Double) rates.get("USD");
+		Double dollarRate = inr/usd;
 		return dollarRate;
 	}
 
 	public static JSONObject getKoinexData() throws Exception {
-		Document doc = Jsoup.connect("https://coindelta.com/market?active=BTC-INR").followRedirects(true).timeout(30000).userAgent("Mozilla/5.0 (Macintosh; Intel Mac OS X 10_9_2) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/33.0.1750.152 Safari/537.36").get();
-		System.out.println(doc.data());
-		
 		String url = "https://koinex.in/api/ticker";
 		URL obj = new URL(url);
 		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
@@ -117,8 +137,8 @@ public class CoinDeltaBinanceInterTrade {
 
 		JSONParser jsonParser = new JSONParser();
 		JSONObject jsonObject = (JSONObject) jsonParser.parse(new InputStreamReader(inputStream, "UTF-8"));
-		JSONObject prices = (JSONObject) jsonObject.get("prices");
-		System.out.println("koinex Prices "+ jsonObject.toString());
+		JSONObject prices = (JSONObject) ((JSONObject) jsonObject.get("prices")).get("inr");
+//		System.out.println("koinex Prices "+ jsonObject.toString());
 		return prices;
 	}
 
@@ -141,7 +161,7 @@ public class CoinDeltaBinanceInterTrade {
 
 		}
 
-		System.out.println("binance Prices: "+ binancePrices);
+//		System.out.println("binance Prices: "+ binancePrices);
 		return binancePrices;
 	}
 
