@@ -40,25 +40,7 @@ public class ExmoBinanceInterTrade {
 			calculatePricePercentageDiffRUB( crypto+ "_RUB", crypto+"USDT", exmoPrices, binancePriceMap, getRUBRate());
 			}
 		
-//		calculatePricePercentageDiffXRP( "XRP", "XRPBTC", exmoPrices, binancePriceMap, dollarRate);
-//		
-//		calculatePricePercentageDiffXRP( "OMG", "OMGBTC", exmoPrices, binancePriceMap, dollarRate);
-//		
-//		calculatePricePercentageDiffXRP( "REQ", "REQBTC", exmoPrices, binancePriceMap, dollarRate);
-//		
-//		calculatePricePercentageDiffXRP( "ZRX", "ZRXBTC", exmoPrices, binancePriceMap, dollarRate);
-//		
-////		calculatePricePercentageDiffXRP( "GNT", "GNTBTC", exmoPrices, binancePriceMap, dollarRate);
-//		
-//		calculatePricePercentageDiffXRP( "BAT", "BATBTC", exmoPrices, binancePriceMap, dollarRate);
-//		
-//		calculatePricePercentageDiffXRP( "AE", "AEBTC", exmoPrices, binancePriceMap, dollarRate);
-//		
-//		calculatePricePercentageDiffXRP( "TRX", "TRXBTC", exmoPrices, binancePriceMap, dollarRate);
-//		
-//		calculatePricePercentageDiffXRP( "XLM", "XLMBTC", exmoPrices, binancePriceMap, dollarRate);
-////		
-//
+
 		
 		//write all data append to a csv file, whenever the code is run for now including timestamp
 		
