@@ -70,9 +70,9 @@ public class WazirxCexInterTrade {
 
 	private static void calculatePricePercentageDiff(String wazirxPair, String cexPair, JSONObject wazirxPrices,
 			Map<String, Map<String, Double>> cexPairTickers, Double dollarRate) {
-		Double wazirxBuyPrice = Double.valueOf((String)((JSONObject) wazirxPrices.get(wazirxPair)).get("buy"));
+		Double wazirxSellPrice = Double.valueOf((String)((JSONObject) wazirxPrices.get(wazirxPair)).get("buy"));
         
-		Double wazirxSellPrice = Double.valueOf((String)((JSONObject) wazirxPrices.get(wazirxPair)).get("sell"));
+		Double wazirxBuyPrice = Double.valueOf((String)((JSONObject) wazirxPrices.get(wazirxPair)).get("sell"));
 		// selling in cex
 		Double cexUSDPrice = cexPairTickers.get(cexPair).get("bid");
 
