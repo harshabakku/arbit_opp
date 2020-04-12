@@ -30,10 +30,10 @@ import com.opencsv.CSVWriter;
  * Hello world!
  *
  */
-public class DataPreparation {
+public class WazirxDataPreparation {
 	public static void main(String[] args) throws Exception {
 
-		String filePath = "./exmo_USDT_USD.csv";
+		String filePath = "./wazirx_USDT_INR.csv";
 		File file = new File(filePath); 
 		try { 
 			// create FileWriter object with file as parameter 
@@ -43,71 +43,55 @@ public class DataPreparation {
 			CSVWriter writer = new CSVWriter(outputfile); 
 
 			// adding header to csv 
-			String[] header = { "c", "t", "v", "h", "l", "o" }; 
+			String[] header = { "t", "o", "h", "l", "c", "v" }; 
 			writer.writeNext(header); 
 			
 		
 
-		Long  currentEpoch = Calendar.getInstance().getTimeInMillis();
+//		Long  currentEpoch = Calendar.getInstance().getTimeInMillis();
 		int resolution = 30; // in minutes
-        int candlesNo = 3000;
-        int duration = 10;
-        int   fromEpoch = (int) ((currentEpoch/1000 - duration*candlesNo*resolution*60));
-        String to = new String();
-        String from = String.valueOf(fromEpoch);
-        for(int i=0; i<=10;i++) {
+//        int candlesNo = 3000;
+//        int duration = 10;
+//        int   fromEpoch = (int) ((currentEpoch/1000 - duration*candlesNo*resolution*60));
+//        String to = new String();
+//        String from = String.valueOf(fromEpoch);
+//        for(int i=0; i<=10;i++) {
 		//String to = String.valueOf((int) (currentEpoch/1000));
-            if(!to.isEmpty()) {from = to;}		
-        	to = String.valueOf(Integer.valueOf(from)+candlesNo*resolution*60);
+//            if(!to.isEmpty()) {from = to;}		
+//        	to = String.valueOf(Integer.valueOf(from)+candlesNo*resolution*60);
 		     
-			JSONObject exmoData = getExmoChartData(from,to,String.valueOf(resolution));
+			JSONArray wazirxData = getWazirxChartData(String.valueOf(resolution));
 
-			
-			ArrayList<JSONObject> candles = (ArrayList<JSONObject>) exmoData.get("candles");
-			
-			System.out.println("candle count: "+ candles.size());
-			
-			writeDataLineByLine(filePath, candles, writer);
-        }
-//        writer.close(); 
+//			
+//			ArrayList<JSONObject> candles = (ArrayList<JSONObject>) wazirxData.get("candles");
+//			
+			System.out.println("candle count: "+ wazirxData.size());
+//			
+			writeDataLineByLine(filePath, wazirxData, writer);
+//        }
+        writer.close(); 
 		}catch (IOException e) { 
 			// TODO Auto-generated catch block 
 			e.printStackTrace(); 
 		} 
 	}
 	
-	public static JSONObject getExmoChartData(String from, String to, String resolution) throws Exception {
+	public static JSONArray getWazirxChartData(String resolution) throws Exception {
 	    //3000 candles bulk fetch allowed
 
-		String url = "https://chart.exmoney.com/ctrl/chart/history?symbol=USDT_USD&resolution=" + resolution
-				+ "&from=" + from + "&to=" + to;
+//		String url = "https://chart.exmoney.com/ctrl/chart/history?symbol=USDT_USD&resolution=" + resolution
+//				+ "&from=" + from + "&to=" + to;
+		String url = "https://x.wazirx.com/api/v2/k?market=usdtinr&limit=10000&period=" + resolution;
 		
 		System.out.println(url);
-		URL obj = new URL(url);
-		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-		con.setRequestMethod("GET");
-
-		InputStream inputStream = con.getInputStream();
-
-		JSONParser jsonParser = new JSONParser();
-		JSONObject jsonObject = (JSONObject) jsonParser.parse(new InputStreamReader(inputStream, "UTF-8"));
-		//System.out.println("exmo data"+ jsonObject.toString());
+		JSONArray jsonArray = getResponse(url);
+	//	System.out.println("result data"+ jsonArray.toString());
 		
-		return jsonObject;
+		return jsonArray;
 	}
 
 
-	public static JSONObject getBinanceChartData() throws Exception {
-		String interval = "30m";
-		String url = "https://www.binance.com/api/v1/klines?symbol=XRPUSDT&interval=" + interval;
-		JSONObject jsonObject = getResponse(url);
-//		JSONObject prices = (JSONObject) ((JSONObject) jsonObject.get("prices")).get("inr");
-		System.out.println("binance data"+ jsonObject.toString());
-		return jsonObject;
-	}
-
-
-	private static JSONObject getResponse(String url)
+	private static JSONArray getResponse(String url)
 			throws MalformedURLException, IOException, ProtocolException, ParseException, UnsupportedEncodingException {
 		URL obj = new URL(url);
 		HttpURLConnection con = (HttpURLConnection) obj.openConnection();
@@ -118,11 +102,14 @@ public class DataPreparation {
 		InputStream inputStream = con.getInputStream();
 
 		JSONParser jsonParser = new JSONParser();
-		JSONObject jsonObject = (JSONObject) jsonParser.parse(new InputStreamReader(inputStream, "UTF-8"));
-		return jsonObject;
+		JSONArray jsonArray = (JSONArray) jsonParser.parse(new InputStreamReader(inputStream, "UTF-8"));
+		return jsonArray;
 	}
+
+
+
 	
-	public static void writeDataLineByLine(String filePath, ArrayList<JSONObject> candles, CSVWriter writer) 
+	public static void writeDataLineByLine(String filePath, JSONArray candles, CSVWriter writer) 
 	{ 
 		// first create file object for file placed at location 
 		// specified by filepath 
@@ -140,10 +127,11 @@ public class DataPreparation {
             
 			
 			//System.out.println(candles);
-			for(JSONObject candle : candles) {
-				//System.out.println(candle);
-				String[] data1 = { String.valueOf(candle.get("c")), String.valueOf(((Long)candle.get("t"))/1000)
-						,String.valueOf(candle.get("v")),String.valueOf(candle.get("h")),String.valueOf(candle.get("l")),String.valueOf(candle.get("o"))
+			for(Object candl : candles) {
+				JSONArray candle = (JSONArray) candl;
+				System.out.println(candle);
+				String[] data1 = { String.valueOf(candle.get(0)), String.valueOf(candle.get(1))
+						,String.valueOf(candle.get(2)),String.valueOf(candle.get(3)),String.valueOf(candle.get(4)),String.valueOf(candle.get(5))
 						}; 
 				writer.writeNext(data1, false); 
 			
