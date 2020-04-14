@@ -69,7 +69,7 @@ public class ExmoDataPreparation {
 			
 			writeDataLineByLine(filePath, candles, writer);
         }
-//        writer.close(); 
+        writer.close(); 
 		}catch (IOException e) { 
 			// TODO Auto-generated catch block 
 			e.printStackTrace(); 
