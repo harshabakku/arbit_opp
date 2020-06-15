@@ -56,20 +56,37 @@ public class NiftyFOGainersLosers {
 
 	}
 
-	private static void prettyPrintNiftyFOData(JSONArray dataArray) {
+	private static void prettyPrintNiftyFOData(JSONArray dataArray) throws Exception {
 		Iterator<JSONObject> iterator = dataArray.iterator();
 
-		System.out.println(" percentChange previousPrice openPrice highPrice lowPrice ltp tradedQuantity symbol ");
+		System.out.println(" percentChange buyQ sellQ buy/sell>2<0.5 previousPrice openPrice highPrice lowPrice ltp tradedQuantity symbol ");
 		while (iterator.hasNext()) {
 			JSONObject dataObj = iterator.next();
 //			System.out.println(dataObj);
-			System.out.println( "      "+ dataObj.get("netPrice") + "      "+ dataObj.get("previousPrice")+ "      "+ dataObj.get("openPrice")+ "      "+ dataObj.get("highPrice")+ "      "+ dataObj.get("lowPrice") + "      "+ dataObj.get("ltp")+ "      "+ dataObj.get("tradedQuantity") + "      "+ dataObj.get("symbol"));
+			
+			JSONObject depthData = getDepthChartData(String.valueOf(dataObj.get("symbol")));
+			Double buySellRatio;
+			try {
+			buySellRatio = (double) ((Long)depthData.get("totalBuyQuantity")/(Long)depthData.get("totalSellQuantity"));
+			}catch(Exception e) {
+				buySellRatio = 0.0;
+			}
+			System.out.println( "      "+ dataObj.get("netPrice") + "      "+ depthData.get("totalBuyQuantity")+ "      "+ depthData.get("totalSellQuantity")+ "      "+ buySellRatio + "      "+ dataObj.get("previousPrice")+ "      "+ dataObj.get("openPrice")+ "      "+ dataObj.get("highPrice")+ "      "+ dataObj.get("lowPrice") + "      "+ dataObj.get("ltp")+ "      "+ dataObj.get("tradedQuantity") + "      "+ dataObj.get("symbol"));
 			
 
 		}
 
-		// System.out.println("cex Prices: " + cexPairTickers);
 
+	}
+
+	private static JSONObject getDepthChartData(String symbol) throws MalformedURLException, ProtocolException, UnsupportedEncodingException, IOException, ParseException {
+		
+		
+        String url = "https://www.nseindia.com/api/quote-equity?symbol="+symbol  + "&section=trade_info";		
+//		System.out.println(url);
+		JSONObject jsonObject = getResponse(url);
+		//System.out.println(jsonObject);
+		return (JSONObject) jsonObject.get("marketDeptOrderBook");
 	}
 
 	private static JSONObject getResponse(String url)
@@ -90,7 +107,7 @@ public class NiftyFOGainersLosers {
 
 		JSONParser jsonParser = new JSONParser();
 		JSONObject jsonObject = (JSONObject) jsonParser.parse(new InputStreamReader(inputStream, "UTF-8"));
-		System.out.println(jsonObject);
+//		System.out.println(jsonObject);
 		inputStream.close();
 
 		return jsonObject;
