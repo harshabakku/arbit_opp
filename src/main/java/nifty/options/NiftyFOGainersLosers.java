@@ -86,7 +86,7 @@ public class NiftyFOGainersLosers {
 			}catch(Exception e) {
 				buySellRatio = 0.0;
 			}
-			String filePath= "./depthChartData/" + symbol + ".csv";
+			String filePath= "./depthChartData/" + new Date().getDate()+ "/"+ symbol + ".csv";
 
 			File file = new File(filePath); 
 			FileWriter outputfile;
