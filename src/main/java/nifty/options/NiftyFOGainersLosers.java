@@ -1,5 +1,7 @@
 package nifty.options;
 
+import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -8,14 +10,18 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
+
+import com.opencsv.CSVWriter;
 
 public class NiftyFOGainersLosers {
 
@@ -23,6 +29,13 @@ public class NiftyFOGainersLosers {
 
 //		System.out.println(calculatePercentageDif(new Double(3), new Double(3.5)) + " should be 16.66666666 percent\n");
 
+        while(true) {		
+        	printNiftyData();
+        	TimeUnit.SECONDS.sleep(22);
+        }
+	}
+
+	private static void printNiftyData() throws Exception {
 		System.out.println("################ ############## \n");
 
 		getNiftyTopFOData("gainers/fnoGainers1.json");
@@ -33,7 +46,6 @@ public class NiftyFOGainersLosers {
 
 
 		System.out.println("################ ############## \n");
-
 	}
 
 	private static Double calculatePercentageDif(Double start, Double end) {
@@ -66,12 +78,32 @@ public class NiftyFOGainersLosers {
 			
 			JSONObject depthData = getDepthChartData(String.valueOf(dataObj.get("symbol")));
 			Double buySellRatio;
+			Object symbol = dataObj.get("symbol");
+			Object totalSellQuantity = depthData.get("totalSellQuantity");
+			Object totalBuyQuantity = depthData.get("totalBuyQuantity");
 			try {
-			buySellRatio = (double) ((Long)depthData.get("totalBuyQuantity")/(Long)depthData.get("totalSellQuantity"));
+			buySellRatio = (double) ((Long)totalBuyQuantity/(Long)depthData.get("totalSellQuantity"));
 			}catch(Exception e) {
 				buySellRatio = 0.0;
 			}
-			System.out.println( "      "+ dataObj.get("netPrice") + "      "+ depthData.get("totalBuyQuantity")+ "      "+ depthData.get("totalSellQuantity")+ "      "+ buySellRatio + "      "+ dataObj.get("previousPrice")+ "      "+ dataObj.get("openPrice")+ "      "+ dataObj.get("highPrice")+ "      "+ dataObj.get("lowPrice") + "      "+ dataObj.get("ltp")+ "      "+ dataObj.get("tradedQuantity") + "      "+ dataObj.get("symbol"));
+			String filePath= "./depthChartData/" + symbol + ".csv";
+
+			File file = new File(filePath); 
+			FileWriter outputfile;
+			CSVWriter writer; 
+			outputfile = new FileWriter(file, true); 
+			try {
+				writer = new CSVWriter(outputfile); 
+				//csvHeader is  "buySellRation >2 <0.5","totalBuyQuantity","totalSellQuantity","date"
+				String[] nextLine = { buySellRatio+ "" ,""+ totalBuyQuantity, ""+ totalSellQuantity, new Date()+"" }; 
+				writer.writeNext(nextLine); 
+
+				writer.close(); 
+			}  catch (IOException e) { 
+			// TODO Auto-generated catch block 
+			e.printStackTrace(); 
+		    } 			
+			System.out.println( "      "+ dataObj.get("netPrice") + "      "+ totalBuyQuantity+ "      "+ totalSellQuantity+ "      "+ buySellRatio + "      "+ dataObj.get("previousPrice")+ "      "+ dataObj.get("openPrice")+ "      "+ dataObj.get("highPrice")+ "      "+ dataObj.get("lowPrice") + "      "+ dataObj.get("ltp")+ "      "+ dataObj.get("tradedQuantity") + "      "+ symbol);
 			
 
 		}
