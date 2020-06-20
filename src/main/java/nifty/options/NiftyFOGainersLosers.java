@@ -10,6 +10,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.ProtocolException;
 import java.net.URL;
+import java.security.acl.LastOwnerException;
 import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -31,14 +32,19 @@ public class NiftyFOGainersLosers {
 //		System.out.println(calculatePercentageDif(new Double(3), new Double(3.5)) + " should be 16.66666666 percent\n");
 
         while(true) {		
-        	printNiftyData();
-        	TimeUnit.SECONDS.sleep(122);
+        	try {
+        	printNiftyData();}
+        	catch(Exception e) {
+        		
+        	}
+        	//TimeUnit.SECONDS.sleep(22);
+        	TimeUnit.SECONDS.sleep(1);
         }
 	}
 
 	private static void printNiftyData() throws Exception {
 		System.out.println("################ ############## \n");
-
+        System.out.println(new Date()); 
 		getNiftyTopFOData("gainers/fnoGainers1.json");
 
 		System.out.println("################ ############## \n");
@@ -96,10 +102,12 @@ public class NiftyFOGainersLosers {
 			FileWriter outputfile;
 			CSVWriter writer; 
 			outputfile = new FileWriter(file, true); 
+			Object netPrice = dataObj.get("netPrice");
+			Object ltPrice = dataObj.get("ltp");
 			try {
 				writer = new CSVWriter(outputfile); 
-				//csvHeader is  "buySellRation >2 <0.5","totalBuyQuantity","totalSellQuantity","date"
-				String[] nextLine = { buySellRatio+ "" ,""+ totalBuyQuantity, ""+ totalSellQuantity, new Date()+"" }; 
+				//csvHeader is  "buySellRation >2 <0.5","netPrice","lastTradedPrice","totalBuyQuantity","totalSellQuantity","date"
+				String[] nextLine = { buySellRatio+ "" , netPrice+ "" ,ltPrice +"" , ""+ totalBuyQuantity, ""+ totalSellQuantity, new Date()+"" }; 
 				writer.writeNext(nextLine); 
 
 				writer.close(); 
@@ -107,7 +115,7 @@ public class NiftyFOGainersLosers {
 			// TODO Auto-generated catch block 
 			e.printStackTrace(); 
 		    } 			
-			System.out.println( "      "+ dataObj.get("netPrice") + "      "+ buySellRatio + "      " + totalBuyQuantity+ "      "+ totalSellQuantity+ "      "+ dataObj.get("previousPrice")+ "      "+ dataObj.get("openPrice")+ "      "+ dataObj.get("highPrice")+ "      "+ dataObj.get("lowPrice") + "      "+ dataObj.get("ltp")+ "      "+ dataObj.get("tradedQuantity") + "      "+ symbol);
+			System.out.println( "      "+ netPrice + "      "+ buySellRatio + "      " + totalBuyQuantity+ "      "+ totalSellQuantity+ "      "+ dataObj.get("previousPrice")+ "      "+ dataObj.get("openPrice")+ "      "+ dataObj.get("highPrice")+ "      "+ dataObj.get("lowPrice") + "      "+ ltPrice+ "      "+ dataObj.get("tradedQuantity") + "      "+ symbol);
 			
 
 		}
