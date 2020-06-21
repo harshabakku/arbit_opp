@@ -22,7 +22,7 @@ import org.json.simple.parser.ParseException;
 
 import com.opencsv.CSVWriter;
 
-public class NIiftyFOTrackLimited {
+public class NiftyFOTrackLimited {
 
 	// use this to fill the individual csvs of stocks that we want to trace more
 	// finer to observe deeper patterns.
@@ -30,6 +30,11 @@ public class NIiftyFOTrackLimited {
 	// future buy/sell quantities and ratios
 	public static void main(String[] args) throws Exception {
 
+		//individual csv header string
+		String headerString = "totalBSRatio," + "equityBSRatio," + "totalFutureBSRatio,"+ "equitiyBuyQuantity," + "equitySellQuantity," + "totalFutureBuyQuantity,"
+				+ "totalFutureSellQuantity,"  + "percentageChange,"
+				+ "lastTradedPrice," + "date";
+		System.out.println(headerString);
 //use args list of strings for symbols that need to be tracked.
 		while (true) {
 //			System.out.println("tracking FOs");
@@ -37,7 +42,7 @@ public class NIiftyFOTrackLimited {
 				// eventually loop through args and add to trackList as well.
 				ArrayList<String> trackList = new ArrayList<String>();
 //        	    trackList.add("CHOLAFIN");
-				trackList.add("GAIL");
+				trackList.add("IBULHSGFIN");
 				trackFOs(trackList);
 			} catch (Exception e) {
 				throw e;
@@ -149,8 +154,8 @@ public class NIiftyFOTrackLimited {
 					Long futureSellQuantity = (Long) futureDepthData.get("totalSellQuantity");
 					Long futureBuyQuantity = (Long) futureDepthData.get("totalBuyQuantity");
 
-					System.out.println("future data of " + symbol + " expiryDate: " + stockMetadata.get("expiryDate")
-							+ " buy:" + futureBuyQuantity + "  sell: " + futureSellQuantity);
+//					System.out.println("future data of " + symbol + " expiryDate: " + stockMetadata.get("expiryDate")
+//							+ " buy:" + futureBuyQuantity + "  sell: " + futureSellQuantity);
 
 					totalFutureBuyQuantity += futureBuyQuantity;
 					totalFutureSellQuantity += futureSellQuantity;
@@ -190,10 +195,7 @@ public class NIiftyFOTrackLimited {
 			//////////////////////////////////////// write to csv here
 			String filePath = "./depthChartData/" + new Date().getDate() + "/" + symbol + ".csv";
 
-			String headerString = "totalBSRatio," + "equityBSRatio," + "totalFutureBSRatio," + "percentageChange,"
-					+ "lastTradedPrice," + "equitiyBuyQuantity," + "equitySellQuantity," + "totalFutureBuyQuantity,"
-					+ "totalFutureSellQuantity," + "date";
-			System.out.println(headerString);
+			
 			File file = new File(filePath);
 			FileWriter outputfile;
 			CSVWriter writer;
@@ -202,17 +204,14 @@ public class NIiftyFOTrackLimited {
 				writer = new CSVWriter(outputfile);
 				// cannot get percentageChange from both the apis
 				String percentageChange = "--";
-				// csvHeader is
-				// "totalBSRatio","equityBSRatio","futureBSRatio","percentageChange","lastTradedPrice","equitiyBuyQuantity","equitySellQuantity"","totalFutureBuyQuantity","totalFutureSellQuantity","date"
 				String[] nextLine = { totalBuySellRatio + "", equityBuySellRatio + "", futureBuySellRatio + "",
-						percentageChange + "", lastTradedPrice + "", "" + equityBuyQuantity, "" + equitySellQuantity,
-						"" + totalFutureBuyQuantity, "" + totalFutureSellQuantity, new Date() + "" };
+						 "" + equityBuyQuantity, "" + equitySellQuantity,
+						"" + totalFutureBuyQuantity, "" + totalFutureSellQuantity, percentageChange + "", lastTradedPrice + "", new Date() + "" };
 				writer.writeNext(nextLine);
 				String printString = totalBuySellRatio + " " + equityBuySellRatio + " " + futureBuySellRatio + " "
-						+ percentageChange + " " + lastTradedPrice + " " + " " + equityBuyQuantity + " "
-						+ equitySellQuantity + " " + totalFutureBuyQuantity + " " + totalFutureSellQuantity + " "
+						+ " " + equityBuyQuantity + " "
+						+ equitySellQuantity + " " + totalFutureBuyQuantity + " " + totalFutureSellQuantity + " "+ percentageChange + " " + lastTradedPrice + " " 
 						+ new Date() + " ";
-
 				System.out.println(printString);
 				writer.close();
 			} catch (IOException e) {
