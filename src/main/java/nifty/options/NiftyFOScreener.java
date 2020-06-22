@@ -35,7 +35,7 @@ public class NiftyFOScreener {
         	try {
         	printNiftyData();}
         	catch(Exception e) {
-        		throw e;
+        		//throw e;
         	}
         	//TimeUnit.SECONDS.sleep(22);
         	//TimeUnit.SECONDS.sleep(1);
@@ -53,9 +53,9 @@ public class NiftyFOScreener {
 
 	public static void getEntireNiftyFOData() throws Exception {
         // all F&Os are about 140 of them and it takes more than 2 min to get the data.
-		//String url = "https://www.nseindia.com/api/equity-stockIndices?index=SECURITIES%20IN%20F%26O";
+		String url = "https://www.nseindia.com/api/equity-stockIndices?index=SECURITIES%20IN%20F%26O";
 //		System.out.println(url);
-		String url = "https://www.nseindia.com/api/equity-stockIndices?index=NIFTY%2050";
+		//String url = "https://www.nseindia.com/api/equity-stockIndices?index=NIFTY%2050";
 		JSONObject jsonObject = getResponse(url);
 
 		//System.out.println("jsonObject returned" + jsonObject);
@@ -69,6 +69,7 @@ public class NiftyFOScreener {
 
 		System.out.println(" percentChange totalRatio equityRatio futureRatio eBuyQ    eSellQ   fBuyQ fSellQ previousDayClose openPrice highPrice lowPrice ltp  symbol ");
 		while (iterator.hasNext()) {
+			try{
 			JSONObject dataObj = iterator.next();
 //			System.out.println(dataObj);
 			String symbol = (String) dataObj.get("symbol");
@@ -141,7 +142,10 @@ public class NiftyFOScreener {
 
 			System.out.println( "      "+ percentageChange + "      " + totalBuySellRatio + "      " + equityBuySellRatio + "      " + futureBuySellRatio + "      " + equityBuyQuantity+ "      "+ equitySellQuantity+ "      " + futureBuyQuantity+ "      "+ futureSellQuantity+
 					"    "+ dataObj.get("previousClose")+ "    "+ dataObj.get("open")+ "    "+ dataObj.get("dayHigh")+ "    "+ dataObj.get("dayLow") + "    "+ lastTradedPrice+ "   "+ symbol);
-			
+			}catch(Exception e) {
+				
+			e.printStackTrace();
+			}
 
 		}
 
@@ -166,7 +170,7 @@ public class NiftyFOScreener {
 
 	}
 
-	private static JSONObject getEquityDepthChartData(String symbol) throws MalformedURLException, ProtocolException, UnsupportedEncodingException, IOException, ParseException {
+	private static JSONObject getEquityDepthChartData(String symbol) throws Exception{
 		
 		if (symbol.contains("&")) {
 			//url already has & to separate params
