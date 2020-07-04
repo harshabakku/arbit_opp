@@ -44,7 +44,7 @@ public class SellOptionStrategyMetrics {
 				// eventually loop through args and add to trackList as well.
 				ArrayList<String> trackList = new ArrayList<String>();
 //         	    trackList.add("CHOLAFIN");
-     			trackList.add("IBULHSGFIN");
+				trackList.add("IBULHSGFIN");
 				trackFOs(trackList);
 			} catch (Exception e) {
 				throw e;
@@ -108,7 +108,7 @@ public class SellOptionStrategyMetrics {
 	}
 
 	private static void trackFOs(ArrayList<String> trackList) throws Exception {
-
+		DecimalFormat decimalFormat = new DecimalFormat("#.##");
 		Iterator<String> trackListIterator = trackList.iterator();
 
 		while (trackListIterator.hasNext()) {
@@ -122,7 +122,6 @@ public class SellOptionStrategyMetrics {
 			Long equityBuyQuantity = (Long) equityDepthData.get("totalBuyQuantity");
 			try {
 				equityBuySellRatio = ((float) equityBuyQuantity / equitySellQuantity);
-				DecimalFormat decimalFormat = new DecimalFormat("#.##");
 				equityBuySellRatio = Float.valueOf(decimalFormat.format(equityBuySellRatio));
 			} catch (Exception e) {
 				equityBuySellRatio = 0.0F;
@@ -142,7 +141,7 @@ public class SellOptionStrategyMetrics {
 
 			JSONArray stockDerivates = (JSONArray) derivativesData.get("stocks");
 
-			Iterator<JSONObject> derivateIterator = stockDerivates.iterator();
+			Iterator<JSONObject> derivativeIterator = stockDerivates.iterator();
 			Long totalFutureSellQuantity = 0L;
 			Long totalFutureBuyQuantity = 0L;
 			int futureInstrumentCount = 0;
@@ -157,15 +156,14 @@ public class SellOptionStrategyMetrics {
 			Double callOptionShortestDist = 1000000000000000.0;
 			Double putOptionShortestDist = 1000000000000000.0;
 			Double dailyVolatility = 0.0;
-            Double percentChange = null;
-			while (derivateIterator.hasNext()) {
-				JSONObject stockObj = derivateIterator.next();
+			Double percentChange = null;
+			while (derivativeIterator.hasNext()) {
+				JSONObject stockObj = derivativeIterator.next();
 				JSONObject stockMetadata = (JSONObject) stockObj.get("metadata");
 				String instrumentType = (String) stockMetadata.get("instrumentType");
 				String optionType = (String) stockMetadata.get("optionType");
 				JSONObject marketDepthData = (JSONObject) stockObj.get("marketDeptOrderBook");
 
-				
 				if ((futureInstrumentCount < 2 & instrumentType.equalsIgnoreCase("Stock Futures"))) {
 					futureInstrumentCount++;
 					Long futureSellQuantity = (Long) marketDepthData.get("totalSellQuantity");
@@ -178,12 +176,12 @@ public class SellOptionStrategyMetrics {
 					totalFutureSellQuantity += futureSellQuantity;
 					JSONObject otherInfo = (JSONObject) marketDepthData.get("otherInfo");
 					dailyVolatility = (Double) otherInfo.get("dailyvolatility");
-					if(percentChange==null) {
-					Double lastPrice = Double.valueOf(stockMetadata.get("lastPrice").toString());
-					Double prevClose = Double.valueOf(stockMetadata.get("prevClose").toString());
-					percentChange = ((lastPrice-prevClose)/prevClose)*100.0;
+					if (percentChange == null) {
+						Double lastPrice = Double.valueOf(stockMetadata.get("lastPrice").toString());
+						Double prevClose = Double.valueOf(stockMetadata.get("prevClose").toString());
+						percentChange = ((lastPrice - prevClose) / prevClose) * 100.0;
 					}
-					
+
 				}
 
 				if (instrumentType.equalsIgnoreCase("Stock Options")) {
@@ -195,7 +193,8 @@ public class SellOptionStrategyMetrics {
 							continue;
 						}
 					}
-					//eliminate strikes somehow by comparing with callOptionStrikePrice and putOptionStrikePrice;
+					// eliminate strikes somehow by comparing with callOptionStrikePrice and
+					// putOptionStrikePrice;
 					Double currentOptionStrikePrice = Double.valueOf((Long) stockMetadata.get("strikePrice"));
 //					System.out.println(currentOptionStrikePrice);
 					Double distStrikeUnderlying = Math.abs(currentOptionStrikePrice - underlyingPrice);
@@ -221,22 +220,22 @@ public class SellOptionStrategyMetrics {
 				}
 
 			}
-			if(callOptionStrikePrice.compareTo(putOptionStrikePrice)!=0) {
-				
-				System.out.println("WARNINGWARNINGWARNINGWARNINGWARNINGWARNINGWARNINGWARNINGWARNINGWARNINGWARNINGWARNING");
-	            System.out.println("strike price's do not match to calculate IV");
+			if (callOptionStrikePrice.compareTo(putOptionStrikePrice) != 0) {
+
+				System.out.println(
+						"WARNINGWARNINGWARNINGWARNINGWARNINGWARNINGWARNINGWARNINGWARNINGWARNINGWARNINGWARNING");
+				System.out.println("strike price's do not match to calculate IV");
 			}
-			System.out.println(callOptionStrikePrice);
-			System.out.println(putOptionStrikePrice);
-			System.out.println(callOptionIV);
-			System.out.println(putOptionIV);
-			System.out.println((callOptionIV+ putOptionIV)/2);
-			System.out.println(dailyVolatility);
+//			System.out.println(callOptionStrikePrice);
+//			System.out.println(putOptionStrikePrice);
+//			System.out.println(callOptionIV);
+//			System.out.println(putOptionIV);
+			double optionIV = (callOptionIV + putOptionIV) / 2;
+//			System.out.println(dailyVolatility);
 
 			float futureBuySellRatio;
 			try {
 				futureBuySellRatio = ((float) totalFutureBuyQuantity / totalFutureSellQuantity);
-				DecimalFormat decimalFormat = new DecimalFormat("#.##");
 				futureBuySellRatio = Float.valueOf(decimalFormat.format(futureBuySellRatio));
 			} catch (Exception e) {
 				futureBuySellRatio = 0.0F;
@@ -249,7 +248,7 @@ public class SellOptionStrategyMetrics {
 				Long totalBuyQuantity = equityBuyQuantity + totalFutureBuyQuantity;
 				Long totalSellQuantity = equitySellQuantity + totalFutureSellQuantity;
 				totalBuySellRatio = ((float) totalBuyQuantity / totalSellQuantity);
-				DecimalFormat decimalFormat = new DecimalFormat("#.##");
+
 				totalBuySellRatio = Float.valueOf(decimalFormat.format(totalBuySellRatio));
 
 			} catch (Exception e) {
@@ -267,17 +266,21 @@ public class SellOptionStrategyMetrics {
 			try {
 				writer = new CSVWriter(outputfile);
 				// cannot get percentageChange from both the apis
-				
-				//double percentChange from gainers losers list every now and then as calculated from future prevClose of yesterday
-				
-				String[] nextLine = { totalBuySellRatio + "", equityBuySellRatio + "", futureBuySellRatio + "",
-						"" + equityBuyQuantity, "" + equitySellQuantity, "" + totalFutureBuyQuantity,
-						"" + totalFutureSellQuantity, percentChange + "", underlyingPrice + "", new Date() + "" };
+
+				// double percentChange from gainers losers list every now and then as
+				// calculated from future prevClose of yesterday
+
+				String[] nextLine = { optionIV + "", callOptionIV + "", putOptionIV + "", totalBuySellRatio + "",
+						equityBuySellRatio + "", futureBuySellRatio + "", "" + equityBuyQuantity,
+						"" + equitySellQuantity, "" + totalFutureBuyQuantity, "" + totalFutureSellQuantity,
+						decimalFormat.format(percentChange) + "", underlyingPrice + "", callOptionStrikePrice + "",
+						optionExpiryDate + "", dailyVolatility + "", new Date() + "" };
 				writer.writeNext(nextLine);
-				String printString = totalBuySellRatio + " " + equityBuySellRatio + " " + futureBuySellRatio + " " + " "
+				String printString = optionIV + " " + callOptionIV + " " + putOptionIV + " "+ totalBuySellRatio + " " + equityBuySellRatio + " " + futureBuySellRatio + " " + " "
 						+ equityBuyQuantity + " " + equitySellQuantity + " " + totalFutureBuyQuantity + " "
-						+ totalFutureSellQuantity + " " + percentChange + " " + underlyingPrice + " " + new Date()
-						+ " ";
+						+ totalFutureSellQuantity + " " + decimalFormat.format(percentChange) + " " + underlyingPrice
+						+ " " + +callOptionStrikePrice + "  " + optionExpiryDate + "  " + dailyVolatility + "  "
+						+ new Date() + " ";
 				System.out.println(printString);
 				writer.close();
 			} catch (IOException e) {
