@@ -36,47 +36,47 @@ public class OptionDataSensibullNse {
 
 		String expiryDate = "2020-07-30";
 		// individual csv header string
-		String headerString = "totalBSRatio,optionIV,percentChange,callOptionIV,putOptionIV," + "equityBSRatio,"
+		String headerString = "totalBSRatio,IVPercentile,optionIV,prevIV,percentChange," + "equityBSRatio,"
 				+ "totalFutureBSRatio," + "equityBuyQuantity," + "equitySellQuantity," + "totalFutureBuyQuantity,"
-				+ "totalFutureSellQuantity," 
-				+ "lastTradedPrice,callOptionStrikePrice,dailyVolatility,optionExpiryDate," + "date";
-			System.out.println(headerString);
+				+ "totalFutureSellQuantity," + "lastTradedPrice,optionStrikePrice,optionExpiryDate,"
+				+ "date";
+		System.out.println(headerString);
 
-		
 		while (true) {
-		 Map<String,JSONObject>ivpData = getIVPercentileData(expiryDate);
+			Map<String, JSONObject> ivpData = getIVPercentileData(expiryDate);
 			try {
 				trackFOs(ivpData);
 			} catch (Exception e) {
-				System.out.println(e); 
+				System.out.println(e);
 			}
 			// TimeUnit.SECONDS.sleep(1);
 		}
 	}
 
-	public static Map<String,JSONObject> getIVPercentileData(String expiryDate) throws Exception {
+	public static Map<String, JSONObject> getIVPercentileData(String expiryDate) throws Exception {
 		String url = "https://api.sensibull.com/v1/instrument_details";
 		JSONObject jsonObject = getResponse(url);
 
-		Map<String,JSONObject> ivData = new HashMap<String, JSONObject>();
+		Map<String, JSONObject> ivData = new HashMap<String, JSONObject>();
 		// System.out.println("jsonObject returned" + jsonObject);
-		JSONObject data= (JSONObject) jsonObject.get("data");
-		
+		JSONObject data = (JSONObject) jsonObject.get("data");
+
 		Iterator<String> iterator = data.keySet().iterator();
 
 		while (iterator.hasNext()) {
 
 			String symbol = iterator.next();
 //			System.out.println(dataObj);
-			if (symbol.contentEquals("NIFTY") || symbol.contentEquals("BANKNIFTY")  ) {
+			if (symbol.contentEquals("NIFTY") || symbol.contentEquals("BANKNIFTY")) {
 				continue;
 			}
-			JSONObject symbolIVData = (JSONObject) ((JSONObject)((JSONObject)data.get(symbol)).get("per_expiry_data")).get(expiryDate);
-		      Double ivPercentile = Double.valueOf(symbolIVData.get("iv_percentile").toString());
-		      if (ivPercentile.longValue()>60) {
-		    	  ivData.put(symbol, symbolIVData);
-		    	  
-		      }
+			JSONObject symbolIVData = (JSONObject) ((JSONObject) ((JSONObject) data.get(symbol)).get("per_expiry_data"))
+					.get(expiryDate);
+			Double ivPercentile = Double.valueOf(symbolIVData.get("iv_percentile").toString());
+			if (ivPercentile.longValue() > 68) {
+				ivData.put(symbol, symbolIVData);
+//		    	  System.out.println(symbolIVData);
+			}
 		}
 		return ivData;
 	}
@@ -137,10 +137,10 @@ public class OptionDataSensibullNse {
 	private static void trackFOs(Map<String, JSONObject> ivpData) throws Exception {
 		DecimalFormat decimalFormat = new DecimalFormat("#.##");
 		Iterator<String> trackListIterator = ivpData.keySet().iterator();
-
+		System.out.println("total no. of stocks with IVP > 65 " + ivpData.keySet().size());
 		while (trackListIterator.hasNext()) {
 			String symbol = trackListIterator.next();
-            JSONObject symbolIVData = ivpData.get(symbol);
+			JSONObject symbolIVData = ivpData.get(symbol);
 			///// get equity depth chart data
 			JSONObject equityDepthData = getEquityDepthChartData(symbol);
 			float equityBuySellRatio;
@@ -173,7 +173,7 @@ public class OptionDataSensibullNse {
 			Long totalFutureBuyQuantity = 0L;
 			int futureInstrumentCount = 0;
 
-			
+			String optionExpiryDate = "";
 			Double percentChange = null;
 			while (derivativeIterator.hasNext()) {
 				JSONObject stockObj = derivativeIterator.next();
@@ -200,13 +200,13 @@ public class OptionDataSensibullNse {
 					}
 
 				}
-				
+			}
+			double optionIV = Double.valueOf(symbolIVData.get("impliedVolatility").toString());
+			double optionIVPercentile = Double.valueOf(symbolIVData.get("iv_percentile").toString());
+			double previousIV = Double.valueOf(symbolIVData.get("prev_iv").toString());
+			optionExpiryDate = symbolIVData.get("expiry").toString();
+			String optionStrikePrice = symbolIVData.get("strike").toString();
 
-				double optionIV = Double.valueOf(symbolIVData.get("impliedVolatility").toString());
-				double optionIVPercentile = Double.valueOf(symbolIVData.get("iv_percentile").toString());
-				double previousIV = Double.valueOf(symbolIVData.get("prev_iv").toString());
-				String optionExpiryDate = symbolIVData.get("expiry").toString();
-				
 			float futureBuySellRatio;
 			try {
 				futureBuySellRatio = ((float) totalFutureBuyQuantity / totalFutureSellQuantity);
@@ -218,7 +218,7 @@ public class OptionDataSensibullNse {
 			/////// calculate total buy sell ratio.................
 
 			float totalBuySellRatio;
-			try { 	 	
+			try {
 				Long totalBuyQuantity = equityBuyQuantity + totalFutureBuyQuantity;
 				Long totalSellQuantity = equitySellQuantity + totalFutureSellQuantity;
 				totalBuySellRatio = ((float) totalBuyQuantity / totalSellQuantity);
@@ -244,27 +244,27 @@ public class OptionDataSensibullNse {
 				// double percentChange from gainers losers list every now and then as
 				// calculated from future prevClose of yesterday
 
-				String[] nextLine = { totalBuySellRatio + "" , optionIV + "", decimalFormat.format(percentChange) + "", 
-						equityBuySellRatio + "", futureBuySellRatio + "", "" + equityBuyQuantity,
-						"" + equitySellQuantity, "" + totalFutureBuyQuantity, "" + totalFutureSellQuantity,
-						 underlyingPrice + "", optionStrikePrice + "",
-						  optionExpiryDate + "", new Date() + "" };
+				String[] nextLine = { totalBuySellRatio + "", decimalFormat.format(optionIVPercentile) + "",
+						decimalFormat.format(optionIV) + "", decimalFormat.format(previousIV) + "",
+						decimalFormat.format(percentChange) + "", equityBuySellRatio + "", futureBuySellRatio + "",
+						"" + equityBuyQuantity, "" + equitySellQuantity, "" + totalFutureBuyQuantity,
+						"" + totalFutureSellQuantity, underlyingPrice + "", optionStrikePrice + "",
+						optionExpiryDate + "", new Date() + "" };
 				writer.writeNext(nextLine);
-				String printString = totalBuySellRatio + " "+ optionIV + " " + decimalFormat.format(percentChange) + " "  + 
-						+ equityBuySellRatio + " " + futureBuySellRatio + " " + " " + equityBuyQuantity + " "
+				String printString = totalBuySellRatio + " " + decimalFormat.format(optionIVPercentile) + " " + decimalFormat.format(optionIV)
+						+ " " + decimalFormat.format(previousIV) + " " + decimalFormat.format(percentChange) + " "
+						+ +equityBuySellRatio + " " + futureBuySellRatio + " " + " " + equityBuyQuantity + " "
 						+ equitySellQuantity + " " + totalFutureBuyQuantity + " " + totalFutureSellQuantity + " "
-						+  underlyingPrice + " " + +optionStrikePrice
-						+ "  " + optionExpiryDate + "  " + new Date() + "  "+ symbol;
+						+ underlyingPrice + " " + optionStrikePrice + "  " + optionExpiryDate + "  " + new Date() + "  "
+						+ symbol;
 				System.out.println(printString);
 				writer.close();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
-//			}
 
 			}
 
 		}
-
 	}
 }
