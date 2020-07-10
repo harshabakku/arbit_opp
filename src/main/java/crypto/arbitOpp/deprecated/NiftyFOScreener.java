@@ -1,4 +1,4 @@
-package nifty.options;
+package crypto.arbitOpp.deprecated;
 
 import java.io.File;
 import java.io.FileWriter;

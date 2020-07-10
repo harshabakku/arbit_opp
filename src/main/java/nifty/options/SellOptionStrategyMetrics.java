@@ -49,7 +49,8 @@ public class SellOptionStrategyMetrics {
 				// trackList.add("IBULHSGFIN");
 				trackFOs(trackList);
 			} catch (Exception e) {
-				throw e;
+				System.out.println(e); 
+				System.out.println(e); 
 			}
 			// TimeUnit.SECONDS.sleep(22);
 			// TimeUnit.SECONDS.sleep(1);
@@ -250,6 +251,11 @@ public class SellOptionStrategyMetrics {
 				System.out.println(
 						"WARNINGWARNINGWARNINGWARNINGWARNINGWARNINGWARNINGWARNINGWARNINGWARNINGWARNINGWARNING");
 				System.out.println("strike price's do not match to calculate IV");
+				System.out.println(callOptionStrikePrice);
+				System.out.println(putOptionStrikePrice);
+				System.err.println(putOptionShortestDist);
+				System.err.println(callOptionShortestDist);
+				System.out.println(symbol);
 			}
 //			System.out.println(callOptionStrikePrice);
 //			System.out.println(putOptionStrikePrice);

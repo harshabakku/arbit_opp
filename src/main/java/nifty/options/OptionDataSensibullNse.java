@@ -13,7 +13,11 @@ import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
+
+import javax.print.attribute.standard.MediaSize.Other;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -22,7 +26,7 @@ import org.json.simple.parser.ParseException;
 
 import com.opencsv.CSVWriter;
 
-public class NiftyFOTrackLimited {
+public class OptionDataSensibullNse {
 
 	// use this to fill the individual csvs of stocks that we want to trace more
 	// finer to observe deeper patterns.
@@ -30,29 +34,54 @@ public class NiftyFOTrackLimited {
 	// future buy/sell quantities and ratios
 	public static void main(String[] args) throws Exception {
 
-		//individual csv header string
-		String headerString = "totalBSRatio," + "equityBSRatio," + "totalFutureBSRatio,"+ "equitiyBuyQuantity," + "equitySellQuantity," + "totalFutureBuyQuantity,"
-				+ "totalFutureSellQuantity,"  + "percentageChange,"
-				+ "lastTradedPrice," + "date";
-		System.out.println(headerString);
-//use args list of strings for symbols that need to be tracked.
+		String expiryDate = "2020-07-30";
+		// individual csv header string
+		String headerString = "totalBSRatio,optionIV,percentChange,callOptionIV,putOptionIV," + "equityBSRatio,"
+				+ "totalFutureBSRatio," + "equityBuyQuantity," + "equitySellQuantity," + "totalFutureBuyQuantity,"
+				+ "totalFutureSellQuantity," 
+				+ "lastTradedPrice,callOptionStrikePrice,dailyVolatility,optionExpiryDate," + "date";
+			System.out.println(headerString);
+
+		
 		while (true) {
-//			System.out.println("tracking FOs");
+		 Map<String,JSONObject>ivpData = getIVPercentileData(expiryDate);
 			try {
-				// eventually loop through args and add to trackList as well.
-				ArrayList<String> trackList = new ArrayList<String>();
-//        	    trackList.add("CHOLAFIN");
-				trackList.add("IBULHSGFIN");
-				trackFOs(trackList);
+				trackFOs(ivpData);
 			} catch (Exception e) {
-				throw e;
+				System.out.println(e); 
 			}
-			// TimeUnit.SECONDS.sleep(22);
 			// TimeUnit.SECONDS.sleep(1);
 		}
 	}
 
-	private static JSONObject getFutureDepthChartData(String symbol) throws Exception {
+	public static Map<String,JSONObject> getIVPercentileData(String expiryDate) throws Exception {
+		String url = "https://api.sensibull.com/v1/instrument_details";
+		JSONObject jsonObject = getResponse(url);
+
+		Map<String,JSONObject> ivData = new HashMap<String, JSONObject>();
+		// System.out.println("jsonObject returned" + jsonObject);
+		JSONObject data= (JSONObject) jsonObject.get("data");
+		
+		Iterator<String> iterator = data.keySet().iterator();
+
+		while (iterator.hasNext()) {
+
+			String symbol = iterator.next();
+//			System.out.println(dataObj);
+			if (symbol.contentEquals("NIFTY") || symbol.contentEquals("BANKNIFTY")  ) {
+				continue;
+			}
+			JSONObject symbolIVData = (JSONObject) ((JSONObject)((JSONObject)data.get(symbol)).get("per_expiry_data")).get(expiryDate);
+		      Double ivPercentile = Double.valueOf(symbolIVData.get("iv_percentile").toString());
+		      if (ivPercentile.longValue()>60) {
+		    	  ivData.put(symbol, symbolIVData);
+		    	  
+		      }
+		}
+		return ivData;
+	}
+
+	private static JSONObject getDerivatesData(String symbol) throws Exception {
 
 		if (symbol.contains("&")) {
 			// url already has & to separate params
@@ -105,14 +134,14 @@ public class NiftyFOTrackLimited {
 		return jsonObject;
 	}
 
-	private static void trackFOs(ArrayList<String> trackList) throws Exception {
-
-		Iterator<String> trackListIterator = trackList.iterator();
+	private static void trackFOs(Map<String, JSONObject> ivpData) throws Exception {
+		DecimalFormat decimalFormat = new DecimalFormat("#.##");
+		Iterator<String> trackListIterator = ivpData.keySet().iterator();
 
 		while (trackListIterator.hasNext()) {
 			String symbol = trackListIterator.next();
-
-			// get equity depth chart data
+            JSONObject symbolIVData = ivpData.get(symbol);
+			///// get equity depth chart data
 			JSONObject equityDepthData = getEquityDepthChartData(symbol);
 			float equityBuySellRatio;
 //				System.out.println(depthData);
@@ -120,7 +149,6 @@ public class NiftyFOTrackLimited {
 			Long equityBuyQuantity = (Long) equityDepthData.get("totalBuyQuantity");
 			try {
 				equityBuySellRatio = ((float) equityBuyQuantity / equitySellQuantity);
-				DecimalFormat decimalFormat = new DecimalFormat("#.##");
 				equityBuySellRatio = Float.valueOf(decimalFormat.format(equityBuySellRatio));
 			} catch (Exception e) {
 				equityBuySellRatio = 0.0F;
@@ -129,49 +157,59 @@ public class NiftyFOTrackLimited {
 			// get futures depth chart data
 
 			// get underlying price as last traded price.
-			String lastTradedPrice = "";
 
-			JSONObject futureData = getFutureDepthChartData(symbol);
+			JSONObject derivativesData = getDerivatesData(symbol);
 
-			lastTradedPrice = String.valueOf(futureData.get("underlyingValue"));
+			// currentPrice
+			Double underlyingPrice = Double.valueOf(derivativesData.get("underlyingValue").toString());
 
 			// get total buy and sell quantities of futures.//enable commented log to verify
 			// data integrity.
 
-			JSONArray stockDerivates = (JSONArray) futureData.get("stocks");
+			JSONArray stockDerivates = (JSONArray) derivativesData.get("stocks");
 
-			Iterator<JSONObject> derivateIterator = stockDerivates.iterator();
+			Iterator<JSONObject> derivativeIterator = stockDerivates.iterator();
 			Long totalFutureSellQuantity = 0L;
 			Long totalFutureBuyQuantity = 0L;
 			int futureInstrumentCount = 0;
-			while (derivateIterator.hasNext()) {
-				JSONObject stockObj = derivateIterator.next();
+
+			
+			Double percentChange = null;
+			while (derivativeIterator.hasNext()) {
+				JSONObject stockObj = derivativeIterator.next();
 				JSONObject stockMetadata = (JSONObject) stockObj.get("metadata");
 				String instrumentType = (String) stockMetadata.get("instrumentType");
-				if (instrumentType.equalsIgnoreCase("Stock Futures")) {
+				String optionType = (String) stockMetadata.get("optionType");
+				JSONObject marketDepthData = (JSONObject) stockObj.get("marketDeptOrderBook");
+
+				if ((futureInstrumentCount < 2 & instrumentType.equalsIgnoreCase("Stock Futures"))) {
 					futureInstrumentCount++;
-					JSONObject futureDepthData = (JSONObject) stockObj.get("marketDeptOrderBook");
-					Long futureSellQuantity = (Long) futureDepthData.get("totalSellQuantity");
-					Long futureBuyQuantity = (Long) futureDepthData.get("totalBuyQuantity");
+					Long futureSellQuantity = (Long) marketDepthData.get("totalSellQuantity");
+					Long futureBuyQuantity = (Long) marketDepthData.get("totalBuyQuantity");
 
 //					System.out.println("future data of " + symbol + " expiryDate: " + stockMetadata.get("expiryDate")
 //							+ " buy:" + futureBuyQuantity + "  sell: " + futureSellQuantity);
 
 					totalFutureBuyQuantity += futureBuyQuantity;
 					totalFutureSellQuantity += futureSellQuantity;
-					if (futureInstrumentCount == 2) {
-						break;
+					JSONObject otherInfo = (JSONObject) marketDepthData.get("otherInfo");
+					if (percentChange == null) {
+						Double lastPrice = Double.valueOf(stockMetadata.get("lastPrice").toString());
+						Double prevClose = Double.valueOf(stockMetadata.get("prevClose").toString());
+						percentChange = ((lastPrice - prevClose) / prevClose) * 100.0;
 					}
-				} else {
-					continue;
+
 				}
+				
 
-			}
-
+				double optionIV = Double.valueOf(symbolIVData.get("impliedVolatility").toString());
+				double optionIVPercentile = Double.valueOf(symbolIVData.get("iv_percentile").toString());
+				double previousIV = Double.valueOf(symbolIVData.get("prev_iv").toString());
+				String optionExpiryDate = symbolIVData.get("expiry").toString();
+				
 			float futureBuySellRatio;
 			try {
 				futureBuySellRatio = ((float) totalFutureBuyQuantity / totalFutureSellQuantity);
-				DecimalFormat decimalFormat = new DecimalFormat("#.##");
 				futureBuySellRatio = Float.valueOf(decimalFormat.format(futureBuySellRatio));
 			} catch (Exception e) {
 				futureBuySellRatio = 0.0F;
@@ -180,11 +218,11 @@ public class NiftyFOTrackLimited {
 			/////// calculate total buy sell ratio.................
 
 			float totalBuySellRatio;
-			try {
+			try { 	 	
 				Long totalBuyQuantity = equityBuyQuantity + totalFutureBuyQuantity;
 				Long totalSellQuantity = equitySellQuantity + totalFutureSellQuantity;
 				totalBuySellRatio = ((float) totalBuyQuantity / totalSellQuantity);
-				DecimalFormat decimalFormat = new DecimalFormat("#.##");
+
 				totalBuySellRatio = Float.valueOf(decimalFormat.format(totalBuySellRatio));
 
 			} catch (Exception e) {
@@ -193,9 +231,8 @@ public class NiftyFOTrackLimited {
 			}
 
 			//////////////////////////////////////// write to csv here
-			String filePath = "./depthChartData/" + new Date().getDate() + "/" + symbol + ".csv";
+			String filePath = "./data/" + new Date().getDate() + "/" + symbol + ".csv";
 
-			
 			File file = new File(filePath);
 			FileWriter outputfile;
 			CSVWriter writer;
@@ -203,24 +240,31 @@ public class NiftyFOTrackLimited {
 			try {
 				writer = new CSVWriter(outputfile);
 				// cannot get percentageChange from both the apis
-				String percentageChange = "--";
-				String[] nextLine = { totalBuySellRatio + "", equityBuySellRatio + "", futureBuySellRatio + "",
-						 "" + equityBuyQuantity, "" + equitySellQuantity,
-						"" + totalFutureBuyQuantity, "" + totalFutureSellQuantity, percentageChange + "", lastTradedPrice + "", new Date() + "" };
+
+				// double percentChange from gainers losers list every now and then as
+				// calculated from future prevClose of yesterday
+
+				String[] nextLine = { totalBuySellRatio + "" , optionIV + "", decimalFormat.format(percentChange) + "", 
+						equityBuySellRatio + "", futureBuySellRatio + "", "" + equityBuyQuantity,
+						"" + equitySellQuantity, "" + totalFutureBuyQuantity, "" + totalFutureSellQuantity,
+						 underlyingPrice + "", optionStrikePrice + "",
+						  optionExpiryDate + "", new Date() + "" };
 				writer.writeNext(nextLine);
-				String printString = totalBuySellRatio + " " + equityBuySellRatio + " " + futureBuySellRatio + " "
-						+ " " + equityBuyQuantity + " "
-						+ equitySellQuantity + " " + totalFutureBuyQuantity + " " + totalFutureSellQuantity + " "+ percentageChange + " " + lastTradedPrice + " " 
-						+ new Date() + " ";
+				String printString = totalBuySellRatio + " "+ optionIV + " " + decimalFormat.format(percentChange) + " "  + 
+						+ equityBuySellRatio + " " + futureBuySellRatio + " " + " " + equityBuyQuantity + " "
+						+ equitySellQuantity + " " + totalFutureBuyQuantity + " " + totalFutureSellQuantity + " "
+						+  underlyingPrice + " " + +optionStrikePrice
+						+ "  " + optionExpiryDate + "  " + new Date() + "  "+ symbol;
 				System.out.println(printString);
 				writer.close();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
+//			}
+
 			}
 
 		}
 
 	}
-
 }
