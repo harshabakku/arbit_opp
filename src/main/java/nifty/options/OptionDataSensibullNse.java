@@ -73,7 +73,21 @@ public class OptionDataSensibullNse {
 			JSONObject symbolIVData = (JSONObject) ((JSONObject) ((JSONObject) data.get(symbol)).get("per_expiry_data"))
 					.get(expiryDate);
 			Double ivPercentile = Double.valueOf(symbolIVData.get("iv_percentile").toString());
-			if (ivPercentile.longValue() > 68) {
+
+			Long callOI = Long.valueOf(symbolIVData.get("call_oi").toString());
+			Long putOI = Long.valueOf(symbolIVData.get("put_oi").toString());
+            Long lotSize = (Double.valueOf(symbolIVData.get("lot_size").toString())).longValue();
+			Long totalOI = (callOI + putOI);
+			Long liquidity = totalOI* lotSize;
+/** glenmark example with no liquidity and too far spread
+ * 					"lot_size": 2300.0,
+					"call_oi": 7838400,
+					"put_oi": 6467600, (7838400+ 6467600)*2300=32903800000
+					our formula for liquidity is lot-size*(callOI + putOI)
+ */
+            
+            
+			if (ivPercentile.longValue() > 68 & liquidity > 32903800000L) {
 				ivData.put(symbol, symbolIVData);
 //		    	  System.out.println(symbolIVData);
 			}
@@ -206,7 +220,7 @@ public class OptionDataSensibullNse {
 			double previousIV = Double.valueOf(symbolIVData.get("prev_iv").toString());
 			optionExpiryDate = symbolIVData.get("expiry").toString();
 			String optionStrikePrice = symbolIVData.get("strike").toString();
-
+			
 			float futureBuySellRatio;
 			try {
 				futureBuySellRatio = ((float) totalFutureBuyQuantity / totalFutureSellQuantity);
