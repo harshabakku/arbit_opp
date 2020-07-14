@@ -36,10 +36,9 @@ public class OptionDataSensibullNse {
 
 		String expiryDate = "2020-07-30";
 		// individual csv header string
-		String headerString = "totalBSRatio,IVPercentile,optionIV,prevIV,percentChange," + "equityBSRatio,"
-				+ "totalFutureBSRatio," + "equityBuyQuantity," + "equitySellQuantity," + "totalFutureBuyQuantity,"
-				+ "totalFutureSellQuantity," + "lastTradedPrice,optionStrikePrice,optionExpiryDate,"
-				+ "date";
+		String headerString = "totalBSRatio,percentChange,IVPercentile,optionIV,prevIV," + "equityBSRatio,"
+				+ "totalFutureBSRatio,putCallRatio," + "equityBuyQuantity," + "equitySellQuantity," + "totalFutureBuyQuantity,"
+				+ "totalFutureSellQuantity," + "lastTradedPrice,optionStrikePrice,optionExpiryDate," + "date";
 		System.out.println(headerString);
 
 		while (true) {
@@ -73,20 +72,17 @@ public class OptionDataSensibullNse {
 			JSONObject symbolIVData = (JSONObject) ((JSONObject) ((JSONObject) data.get(symbol)).get("per_expiry_data"))
 					.get(expiryDate);
 			Double ivPercentile = Double.valueOf(symbolIVData.get("iv_percentile").toString());
-
 			Long callOI = Long.valueOf(symbolIVData.get("call_oi").toString());
 			Long putOI = Long.valueOf(symbolIVData.get("put_oi").toString());
-            Long lotSize = (Double.valueOf(symbolIVData.get("lot_size").toString())).longValue();
+			Long lotSize = (Double.valueOf(symbolIVData.get("lot_size").toString())).longValue();
 			Long totalOI = (callOI + putOI);
-			Long liquidity = totalOI* lotSize;
-/** glenmark example with no liquidity and too far spread
- * 					"lot_size": 2300.0,
-					"call_oi": 7838400,
-					"put_oi": 6467600, (7838400+ 6467600)*2300=32903800000
-					our formula for liquidity is lot-size*(callOI + putOI)
- */
-            
-            
+			Long liquidity = totalOI * lotSize;
+			/**
+			 * glenmark example with no liquidity and too far spread "lot_size": 2300.0,
+			 * "call_oi": 7838400, "put_oi": 6467600, (7838400+ 6467600)*2300=32903800000
+			 * our formula for liquidity is lot-size*(callOI + putOI)
+			 */
+
 			if (ivPercentile.longValue() > 68 & liquidity > 32903800000L) {
 				ivData.put(symbol, symbolIVData);
 //		    	  System.out.println(symbolIVData);
@@ -218,9 +214,11 @@ public class OptionDataSensibullNse {
 			double optionIV = Double.valueOf(symbolIVData.get("impliedVolatility").toString());
 			double optionIVPercentile = Double.valueOf(symbolIVData.get("iv_percentile").toString());
 			double previousIV = Double.valueOf(symbolIVData.get("prev_iv").toString());
+			float putCallRatio = Float.valueOf(symbolIVData.get("pcr").toString());
+
 			optionExpiryDate = symbolIVData.get("expiry").toString();
 			String optionStrikePrice = symbolIVData.get("strike").toString();
-			
+
 			float futureBuySellRatio;
 			try {
 				futureBuySellRatio = ((float) totalFutureBuyQuantity / totalFutureSellQuantity);
@@ -245,7 +243,7 @@ public class OptionDataSensibullNse {
 			}
 
 			//////////////////////////////////////// write to csv here
-			String filePath = "./data/" + new Date().getDate() + "/" + symbol + ".csv";
+			String filePath = "./data/" + new Date().getMonth() + "/" + symbol + ".csv";
 
 			File file = new File(filePath);
 			FileWriter outputfile;
@@ -258,19 +256,19 @@ public class OptionDataSensibullNse {
 				// double percentChange from gainers losers list every now and then as
 				// calculated from future prevClose of yesterday
 
-				String[] nextLine = { totalBuySellRatio + "", decimalFormat.format(optionIVPercentile) + "",
-						decimalFormat.format(optionIV) + "", decimalFormat.format(previousIV) + "",
-						decimalFormat.format(percentChange) + "", equityBuySellRatio + "", futureBuySellRatio + "",
+				String[] nextLine = { totalBuySellRatio + "", decimalFormat.format(percentChange) + "",
+						decimalFormat.format(optionIVPercentile) + "", decimalFormat.format(optionIV) + "",
+						decimalFormat.format(previousIV) + "", equityBuySellRatio + "", futureBuySellRatio + "",decimalFormat.format(putCallRatio)+"",
 						"" + equityBuyQuantity, "" + equitySellQuantity, "" + totalFutureBuyQuantity,
 						"" + totalFutureSellQuantity, underlyingPrice + "", optionStrikePrice + "",
 						optionExpiryDate + "", new Date() + "" };
 				writer.writeNext(nextLine);
-				String printString = totalBuySellRatio + " " + decimalFormat.format(optionIVPercentile) + " " + decimalFormat.format(optionIV)
-						+ " " + decimalFormat.format(previousIV) + " " + decimalFormat.format(percentChange) + " "
-						+ +equityBuySellRatio + " " + futureBuySellRatio + " " + " " + equityBuyQuantity + " "
-						+ equitySellQuantity + " " + totalFutureBuyQuantity + " " + totalFutureSellQuantity + " "
-						+ underlyingPrice + " " + optionStrikePrice + "  " + optionExpiryDate + "  " + new Date() + "  "
-						+ symbol;
+				String printString = totalBuySellRatio + "  " + decimalFormat.format(percentChange) + "   "
+						+ decimalFormat.format(optionIVPercentile) + " " + decimalFormat.format(optionIV) + " "
+						+ decimalFormat.format(previousIV) + "   " + +equityBuySellRatio + " " + futureBuySellRatio
+						+ " " + decimalFormat.format(putCallRatio)+ "  " + equityBuyQuantity + " " + equitySellQuantity + " " + totalFutureBuyQuantity + " "
+						+ totalFutureSellQuantity + " " + underlyingPrice + " " + optionStrikePrice + "  "
+						+ optionExpiryDate + "  " + new Date() + "  " + symbol;
 				System.out.println(printString);
 				writer.close();
 			} catch (IOException e) {
