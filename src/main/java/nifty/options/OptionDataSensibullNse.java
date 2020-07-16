@@ -76,14 +76,14 @@ public class OptionDataSensibullNse {
 			Long putOI = Long.valueOf(symbolIVData.get("put_oi").toString());
 			Long lotSize = (Double.valueOf(symbolIVData.get("lot_size").toString())).longValue();
 			Long totalOI = (callOI + putOI);
-			Long liquidity = totalOI * lotSize;
+			Long liquidity = totalOI /lotSize ; //when lot size is more options tend to be illiquid for some reason.
 			/**
 			 * glenmark example with no liquidity and too far spread "lot_size": 2300.0,
 			 * "call_oi": 7838400, "put_oi": 6467600, (7838400+ 6467600)*2300=32903800000
 			 * our formula for liquidity is lot-size*(callOI + putOI)
 			 */
-
-			if (ivPercentile.longValue() > 68 & liquidity > 32903800000L) {
+			                                                
+			if (ivPercentile.longValue() > 60 & liquidity > 10000L) {
 				ivData.put(symbol, symbolIVData);
 //		    	  System.out.println(symbolIVData);
 			}
@@ -189,7 +189,6 @@ public class OptionDataSensibullNse {
 				JSONObject stockObj = derivativeIterator.next();
 				JSONObject stockMetadata = (JSONObject) stockObj.get("metadata");
 				String instrumentType = (String) stockMetadata.get("instrumentType");
-				String optionType = (String) stockMetadata.get("optionType");
 				JSONObject marketDepthData = (JSONObject) stockObj.get("marketDeptOrderBook");
 
 				if ((futureInstrumentCount < 2 & instrumentType.equalsIgnoreCase("Stock Futures"))) {
