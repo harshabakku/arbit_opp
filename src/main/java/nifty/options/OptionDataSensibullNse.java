@@ -34,6 +34,7 @@ public class OptionDataSensibullNse {
 	// future buy/sell quantities and ratios
 	public static void main(String[] args) throws Exception {
 
+		float ivpLimit = 65;
 		String expiryDate = "2020-07-30";
 		// individual csv header string
 		String headerString = "totalBSRatio,percentChange,IVPercentile,optionIV,prevIV," + "equityBSRatio,"
@@ -42,8 +43,10 @@ public class OptionDataSensibullNse {
 		System.out.println(headerString);
 
 		while (true) {
-			Map<String, JSONObject> ivpData = getIVPercentileData(expiryDate);
+			Map<String, JSONObject> ivpData = getIVPercentileData(expiryDate,ivpLimit);
 			try {
+				System.out.println("\nstotal no. of stocks with IVP > "+ ivpLimit +" : "+  ivpData.keySet().size());
+				System.out.println("###########################################################################################");
 				trackFOs(ivpData);
 			} catch (Exception e) {
 				System.out.println(e);
@@ -52,7 +55,7 @@ public class OptionDataSensibullNse {
 		}
 	}
 
-	public static Map<String, JSONObject> getIVPercentileData(String expiryDate) throws Exception {
+	public static Map<String, JSONObject> getIVPercentileData(String expiryDate, float ivpLimit) throws Exception {
 		String url = "https://api.sensibull.com/v1/instrument_details";
 		JSONObject jsonObject = getResponse(url);
 
@@ -83,7 +86,7 @@ public class OptionDataSensibullNse {
 			 * our formula for liquidity is lot-size*(callOI + putOI)
 			 */
 			                                                
-			if (ivPercentile.longValue() > 60 & liquidity > 10000L) {
+			if (ivPercentile.longValue() > ivpLimit & liquidity > 7000L) {
 				ivData.put(symbol, symbolIVData);
 //		    	  System.out.println(symbolIVData);
 			}
@@ -147,8 +150,8 @@ public class OptionDataSensibullNse {
 	private static void trackFOs(Map<String, JSONObject> ivpData) throws Exception {
 		DecimalFormat decimalFormat = new DecimalFormat("#.##");
 		Iterator<String> trackListIterator = ivpData.keySet().iterator();
-		System.out.println("total no. of stocks with IVP > 65 " + ivpData.keySet().size());
 		while (trackListIterator.hasNext()) {
+			try {
 			String symbol = trackListIterator.next();
 			JSONObject symbolIVData = ivpData.get(symbol);
 			///// get equity depth chart data
@@ -202,6 +205,7 @@ public class OptionDataSensibullNse {
 					totalFutureBuyQuantity += futureBuyQuantity;
 					totalFutureSellQuantity += futureSellQuantity;
 					JSONObject otherInfo = (JSONObject) marketDepthData.get("otherInfo");
+					//
 					if (percentChange == null) {
 						Double lastPrice = Double.valueOf(stockMetadata.get("lastPrice").toString());
 						Double prevClose = Double.valueOf(stockMetadata.get("prevClose").toString());
@@ -248,7 +252,7 @@ public class OptionDataSensibullNse {
 			FileWriter outputfile;
 			CSVWriter writer;
 			outputfile = new FileWriter(file, true);
-			try {
+			
 				writer = new CSVWriter(outputfile);
 				// cannot get percentageChange from both the apis
 
@@ -268,14 +272,17 @@ public class OptionDataSensibullNse {
 						+ " " + decimalFormat.format(putCallRatio)+ "  " + equityBuyQuantity + " " + equitySellQuantity + " " + totalFutureBuyQuantity + " "
 						+ totalFutureSellQuantity + " " + underlyingPrice + " " + optionStrikePrice + "  "
 						+ optionExpiryDate + "  " + new Date() + "  " + symbol;
-				System.out.println(printString);
+				if(totalBuySellRatio>1.5 || totalBuySellRatio < 0.666) {
+					
+					System.out.println(printString);
+				}
 				writer.close();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();
 
 			}
-
+			
 		}
 	}
 }
