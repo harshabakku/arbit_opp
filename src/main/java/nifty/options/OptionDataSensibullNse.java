@@ -16,8 +16,10 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 import javax.print.attribute.standard.MediaSize.Other;
+import javax.swing.plaf.basic.BasicSliderUI.TrackListener;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -34,28 +36,36 @@ public class OptionDataSensibullNse {
 	// future buy/sell quantities and ratios
 	public static void main(String[] args) throws Exception {
 
-		float ivpLimit = 65;
+		float ivpLimit = 0;
 		String expiryDate = "2020-07-30";
+		ArrayList<String> trackList = new ArrayList<String>();
+
+		trackList.add("NIFTY");
+		trackList.add("BANKNIFTY");
+
 		// individual csv header string
 		String headerString = "totalBSRatio,percentChange,IVPercentile,optionIV,prevIV," + "equityBSRatio,"
-				+ "totalFutureBSRatio,putCallRatio," + "equityBuyQuantity," + "equitySellQuantity," + "totalFutureBuyQuantity,"
-				+ "totalFutureSellQuantity," + "lastTradedPrice,optionStrikePrice,optionExpiryDate," + "date";
+				+ "totalFutureBSRatio,putCallRatio," + "equityBuyQuantity," + "equitySellQuantity,"
+				+ "totalFutureBuyQuantity," + "totalFutureSellQuantity,"
+				+ "lastTradedPrice,optionStrikePrice,optionExpiryDate," + "date";
 		System.out.println(headerString);
 
 		while (true) {
-			Map<String, JSONObject> ivpData = getIVPercentileData(expiryDate,ivpLimit);
+			Map<String, JSONObject> ivpData = getIVPercentileData(expiryDate, ivpLimit, trackList);
 			try {
-				System.out.println("\nstotal no. of stocks with IVP > "+ ivpLimit +" : "+  ivpData.keySet().size());
-				System.out.println("###########################################################################################");
-				trackFOs(ivpData);
+				System.out.println("\ntotal no. of stocks with IVP > " + ivpLimit + " : " + ivpData.keySet().size());
+				System.out.println(
+						"###########################################################################################");
+				trackFOs(ivpData, trackList);
 			} catch (Exception e) {
 				System.out.println(e);
 			}
-			// TimeUnit.SECONDS.sleep(1);
+//			TimeUnit.SECONDS.sleep(20);
 		}
 	}
 
-	public static Map<String, JSONObject> getIVPercentileData(String expiryDate, float ivpLimit) throws Exception {
+	public static Map<String, JSONObject> getIVPercentileData(String expiryDate, float ivpLimit,
+			ArrayList<String> trackList) throws Exception {
 		String url = "https://api.sensibull.com/v1/instrument_details";
 		JSONObject jsonObject = getResponse(url);
 
@@ -69,9 +79,10 @@ public class OptionDataSensibullNse {
 
 			String symbol = iterator.next();
 //			System.out.println(dataObj);
-			if (symbol.contentEquals("NIFTY") || symbol.contentEquals("BANKNIFTY")) {
-				continue;
-			}
+//			if (symbol.contentEquals("NIFTY") || symbol.contentEquals("BANKNIFTY")) {
+//				continue;
+//			}
+
 			JSONObject symbolIVData = (JSONObject) ((JSONObject) ((JSONObject) data.get(symbol)).get("per_expiry_data"))
 					.get(expiryDate);
 			Double ivPercentile = Double.valueOf(symbolIVData.get("iv_percentile").toString());
@@ -79,16 +90,23 @@ public class OptionDataSensibullNse {
 			Long putOI = Long.valueOf(symbolIVData.get("put_oi").toString());
 			Long lotSize = (Double.valueOf(symbolIVData.get("lot_size").toString())).longValue();
 			Long totalOI = (callOI + putOI);
-			Long liquidity = totalOI /lotSize ; //when lot size is more options tend to be illiquid for some reason.
+			Long liquidity = totalOI / lotSize; // when lot size is more options tend to be illiquid for some reason.
 			/**
 			 * glenmark example with no liquidity and too far spread "lot_size": 2300.0,
 			 * "call_oi": 7838400, "put_oi": 6467600, (7838400+ 6467600)*2300=32903800000
 			 * our formula for liquidity is lot-size*(callOI + putOI)
 			 */
-			                                                
-			if (ivPercentile.longValue() > ivpLimit & liquidity > 7000L) {
-				ivData.put(symbol, symbolIVData);
+			if (trackList.isEmpty()) {
+				if (ivPercentile.longValue() > ivpLimit
+//					& liquidity > 10000L
+				) {
+					ivData.put(symbol, symbolIVData);
 //		    	  System.out.println(symbolIVData);
+				}
+			} else {
+				if (trackList.contains(symbol)) {
+					ivData.put(symbol, symbolIVData);
+				}
 			}
 		}
 		return ivData;
@@ -103,7 +121,7 @@ public class OptionDataSensibullNse {
 		String url = "https://www.nseindia.com/api/quote-derivative?symbol=" + symbol;
 //		System.out.println(url);
 		JSONObject jsonObject = getResponse(url);
-		// System.out.println(jsonObject);
+//		 System.out.println(jsonObject);
 
 		return jsonObject;
 
@@ -147,26 +165,48 @@ public class OptionDataSensibullNse {
 		return jsonObject;
 	}
 
-	private static void trackFOs(Map<String, JSONObject> ivpData) throws Exception {
+	private static void trackFOs(Map<String, JSONObject> ivpData, ArrayList<String> trackList) throws Exception {
 		DecimalFormat decimalFormat = new DecimalFormat("#.##");
-		Iterator<String> trackListIterator = ivpData.keySet().iterator();
-		while (trackListIterator.hasNext()) {
+		//note that ivp Data is filtered based on trackList if exists, if not using IVP, and OI liquidity
+		Iterator<String> ivpDataIterator = ivpData.keySet().iterator();
+		while (ivpDataIterator.hasNext()) {
 			try {
-			String symbol = trackListIterator.next();
+			String symbol = ivpDataIterator.next();
 			JSONObject symbolIVData = ivpData.get(symbol);
+			
+			Long equitySellQuantity = 0L;
+			Long equityBuyQuantity = 0L;
+			float equityBuySellRatio  =0.0F;
+			
+			if (!symbol.contentEquals("NIFTY") & !symbol.contentEquals("BANKNIFTY")) {
+			
 			///// get equity depth chart data
 			JSONObject equityDepthData = getEquityDepthChartData(symbol);
-			float equityBuySellRatio;
 //				System.out.println(depthData);
-			Long equitySellQuantity = (Long) equityDepthData.get("totalSellQuantity");
-			Long equityBuyQuantity = (Long) equityDepthData.get("totalBuyQuantity");
+			equitySellQuantity = (Long) equityDepthData.get("totalSellQuantity");
+			equityBuyQuantity = (Long) equityDepthData.get("totalBuyQuantity");
 			try {
 				equityBuySellRatio = ((float) equityBuyQuantity / equitySellQuantity);
 				equityBuySellRatio = Float.valueOf(decimalFormat.format(equityBuySellRatio));
 			} catch (Exception e) {
 				equityBuySellRatio = 0.0F;
 			}
-
+			Float equityMarketCap  = Float.valueOf(((JSONObject)equityDepthData.get("tradeInfo")).get("totalMarketCap").toString());
+			
+			//if there are stocks in trackList, do not filter using IV, OI liquidity, equity marketCap
+			if(trackList.isEmpty()) {
+				//filter based on equity market cap only if tracklist is empty.
+//				System.out.println(equityMarketCap);
+//				System.out.println((float) 19582869);
+				if(!(equityMarketCap.compareTo((float) 19582869)>0)) {
+					//reliance data used as a base here.
+					
+					//skip the stock that does not have enough market cap
+					continue;
+					}
+				
+			}
+			}
 			// get futures depth chart data
 
 			// get underlying price as last traded price.
@@ -175,12 +215,11 @@ public class OptionDataSensibullNse {
 
 			// currentPrice
 			Double underlyingPrice = Double.valueOf(derivativesData.get("underlyingValue").toString());
-
 			// get total buy and sell quantities of futures.//enable commented log to verify
 			// data integrity.
 
 			JSONArray stockDerivates = (JSONArray) derivativesData.get("stocks");
-
+			
 			Iterator<JSONObject> derivativeIterator = stockDerivates.iterator();
 			Long totalFutureSellQuantity = 0L;
 			Long totalFutureBuyQuantity = 0L;
@@ -194,7 +233,7 @@ public class OptionDataSensibullNse {
 				String instrumentType = (String) stockMetadata.get("instrumentType");
 				JSONObject marketDepthData = (JSONObject) stockObj.get("marketDeptOrderBook");
 
-				if ((futureInstrumentCount < 2 & instrumentType.equalsIgnoreCase("Stock Futures"))) {
+				if ((futureInstrumentCount < 2 & (instrumentType.equalsIgnoreCase("Stock Futures") || instrumentType.equalsIgnoreCase("Index Futures")))) {
 					futureInstrumentCount++;
 					Long futureSellQuantity = (Long) marketDepthData.get("totalSellQuantity");
 					Long futureBuyQuantity = (Long) marketDepthData.get("totalBuyQuantity");
@@ -272,10 +311,10 @@ public class OptionDataSensibullNse {
 						+ " " + decimalFormat.format(putCallRatio)+ "  " + equityBuyQuantity + " " + equitySellQuantity + " " + totalFutureBuyQuantity + " "
 						+ totalFutureSellQuantity + " " + underlyingPrice + " " + optionStrikePrice + "  "
 						+ optionExpiryDate + "  " + new Date() + "  " + symbol;
-				if(totalBuySellRatio>1.5 || totalBuySellRatio < 0.666) {
+//				if(totalBuySellRatio>1.5 || totalBuySellRatio < 0.666) {
 					
 					System.out.println(printString);
-				}
+//				}
 				writer.close();
 			} catch (IOException e) {
 				// TODO Auto-generated catch block
