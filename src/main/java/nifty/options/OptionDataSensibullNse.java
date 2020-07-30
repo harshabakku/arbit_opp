@@ -17,6 +17,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 
 import javax.print.attribute.standard.MediaSize.Other;
 import javax.swing.plaf.basic.BasicSliderUI.TrackListener;
@@ -37,11 +38,13 @@ public class OptionDataSensibullNse {
 	public static void main(String[] args) throws Exception {
 
 		float ivpLimit = 0;
-		String expiryDate = "2020-07-30";
+		String expiryDate = "2020-08-27";
 		ArrayList<String> trackList = new ArrayList<String>();
 
-		trackList.add("NIFTY");
+//		trackList.add("RELIANCE");
 		trackList.add("BANKNIFTY");
+		trackList.add("NIFTY");
+//		trackList.add("HDFC");
 
 		// individual csv header string
 		String headerString = "totalBSRatio,percentChange,IVPercentile,optionIV,prevIV," + "equityBSRatio,"
@@ -72,7 +75,7 @@ public class OptionDataSensibullNse {
 		Map<String, JSONObject> ivData = new HashMap<String, JSONObject>();
 		// System.out.println("jsonObject returned" + jsonObject);
 		JSONObject data = (JSONObject) jsonObject.get("data");
-
+//        System.out.println(data);
 		Iterator<String> iterator = data.keySet().iterator();
 
 		while (iterator.hasNext()) {
@@ -82,9 +85,13 @@ public class OptionDataSensibullNse {
 //			if (symbol.contentEquals("NIFTY") || symbol.contentEquals("BANKNIFTY")) {
 //				continue;
 //			}
-
+//			System.out.println(symbol);
 			JSONObject symbolIVData = (JSONObject) ((JSONObject) ((JSONObject) data.get(symbol)).get("per_expiry_data"))
 					.get(expiryDate);
+			if(symbolIVData == null) {
+//			data does not exist for this expiry date for this symbol
+				continue;
+			}
 			Double ivPercentile = Double.valueOf(symbolIVData.get("iv_percentile").toString());
 			Long callOI = Long.valueOf(symbolIVData.get("call_oi").toString());
 			Long putOI = Long.valueOf(symbolIVData.get("put_oi").toString());
@@ -212,7 +219,6 @@ public class OptionDataSensibullNse {
 			// get underlying price as last traded price.
 
 			JSONObject derivativesData = getDerivatesData(symbol);
-
 			// currentPrice
 			Double underlyingPrice = Double.valueOf(derivativesData.get("underlyingValue").toString());
 			// get total buy and sell quantities of futures.//enable commented log to verify
