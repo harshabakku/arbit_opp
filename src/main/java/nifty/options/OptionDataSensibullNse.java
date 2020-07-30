@@ -12,9 +12,11 @@ import java.net.ProtocolException;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
@@ -36,14 +38,14 @@ public class OptionDataSensibullNse {
 	// cant be done for cause it takes more than 40 sec already before including
 	// future buy/sell quantities and ratios
 	public static void main(String[] args) throws Exception {
+		
+		System.out.println(new Date());
 
 		float ivpLimit = 0;
 		String expiryDate = "2020-08-27";
-		ArrayList<String> trackList = new ArrayList<String>();
-
+		List<String> trackList =  Arrays.asList("BANKNIFTY","NIFTY");
+        
 //		trackList.add("RELIANCE");
-		trackList.add("BANKNIFTY");
-		trackList.add("NIFTY");
 //		trackList.add("HDFC");
 
 		// individual csv header string
@@ -68,7 +70,7 @@ public class OptionDataSensibullNse {
 	}
 
 	public static Map<String, JSONObject> getIVPercentileData(String expiryDate, float ivpLimit,
-			ArrayList<String> trackList) throws Exception {
+			List<String> trackList) throws Exception {
 		String url = "https://api.sensibull.com/v1/instrument_details";
 		JSONObject jsonObject = getResponse(url);
 
@@ -172,7 +174,7 @@ public class OptionDataSensibullNse {
 		return jsonObject;
 	}
 
-	private static void trackFOs(Map<String, JSONObject> ivpData, ArrayList<String> trackList) throws Exception {
+	private static void trackFOs(Map<String, JSONObject> ivpData, List<String> trackList) throws Exception {
 		DecimalFormat decimalFormat = new DecimalFormat("#.##");
 		//note that ivp Data is filtered based on trackList if exists, if not using IVP, and OI liquidity
 		Iterator<String> ivpDataIterator = ivpData.keySet().iterator();
