@@ -43,7 +43,9 @@ public class OptionDataSensibullNse {
 
 		float ivpLimit = 0;
 		String expiryDate = "2020-08-27";
-		List<String> trackList =  Arrays.asList("BANKNIFTY","NIFTY");
+		//FII data falling, cipla and banknifty oi falling, wait till rest of ratios are in your favour,check cipla iv once
+		List<String> trackList =  Arrays.asList("BANKNIFTY","CIPLA","NIFTY","WIPRO","RELIANCE");
+		
         
 //		trackList.add("RELIANCE");
 //		trackList.add("HDFC");
@@ -63,9 +65,9 @@ public class OptionDataSensibullNse {
 						"###########################################################################################");
 				trackFOs(ivpData, trackList);
 			} catch (Exception e) {
-				System.out.println(e);
+				System.out.println("exception caught "+ e.getMessage());
 			}
-//			TimeUnit.SECONDS.sleep(20);
+			TimeUnit.SECONDS.sleep(20);
 		}
 	}
 
