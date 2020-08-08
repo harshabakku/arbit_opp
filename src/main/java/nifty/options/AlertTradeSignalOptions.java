@@ -47,7 +47,7 @@ public class AlertTradeSignalOptions {
 		float ivpLimit = 0;
 		String expiryDate = "2020-08-27";
 //			List<String> trackList =  Arrays.asList("CIPLA","NIFTY","RELIANCE", "WIPRO", "SUNPHARMA");
-		List<String> trackList = Arrays.asList("BANKNIFTY","CIPLA","NIFTY");
+		List<String> trackList = Arrays.asList("NIFTY","BANKNIFTY","HDFCBANK","JSWSTEEL");
 
 //			trackList.add("RELIANCE");
 //			trackList.add("HDFC");
@@ -67,9 +67,10 @@ public class AlertTradeSignalOptions {
 						"###########################################################################################");
 				trackFOs(ivpData, trackList);
 			} catch (Exception e) {
-				System.out.println(e);
+
+				e.printStackTrace();
 			}
-//				TimeUnit.SECONDS.sleep(20);
+				TimeUnit.SECONDS.sleep(20);
 		}
 	}
 
@@ -199,7 +200,7 @@ public class AlertTradeSignalOptions {
 					equityBuyQuantity = (Long) equityDepthData.get("totalBuyQuantity");
 					try {
 						equityBuySellRatio = ((float) equityBuyQuantity / equitySellQuantity);
-						equityBuySellRatio = Float.valueOf(decimalFormat.format(equityBuySellRatio));
+						equityBuySellRatio = Float.valueOf(equityBuySellRatio);
 					} catch (Exception e) {
 						equityBuySellRatio = 0.0F;
 					}
@@ -312,7 +313,6 @@ public class AlertTradeSignalOptions {
 
 				// double check percentChange from gainers losers list every now and then as
 				// calculated from future prevClose of yesterday
-
 				String[] nextLine = { decimalFormat2.format(totalBuySellRatio) + "", decimalFormat.format(percentChange) + "",
 						decimalFormat.format(optionIVPercentile) + "", decimalFormat.format(optionIV) + "",
 						decimalFormat.format(previousIV) + "", decimalFormat2.format(equityBuySellRatio) + "",
@@ -347,17 +347,19 @@ public class AlertTradeSignalOptions {
 		DepthData penUltimateData = penultimateDataMap.get(symbol);
 		DepthData ultimateData = ultimateDataMap.get(symbol);
 		DepthData newData = new DepthData(equityBuySellRatio, futureBuySellRatio, putCallRatio);
-		if (penUltimateData != null || ultimateData != null) {
+		if (penUltimateData != null && ultimateData != null) {
+//		System.out.println(ultimateData.optionRatio);
+//		System.out.println(penUltimateData.optionRatio);
 
 			if (equityBuySellRatio > penUltimateData.equityRatio && futureBuySellRatio > penUltimateData.futureRatio
-					&& putCallRatio > penUltimateData.optionRatio) {
-				System.out.println("alert: strong trend: all three ratios RISING for " + symbol);
+					&& putCallRatio >= penUltimateData.optionRatio) {
+//				System.out.println("alert: strong trend: all three ratios RISING for " + symbol);
 			}
 
 			if (equityBuySellRatio < penUltimateData.equityRatio && futureBuySellRatio < penUltimateData.futureRatio
-					&& putCallRatio < penUltimateData.optionRatio) {
+					&& putCallRatio <= penUltimateData.optionRatio) {
 
-				System.out.println("alert: strong trend: all three ratios FALLING for " + symbol);
+//				System.out.println("alert: strong trend: all three ratios FALLING for " + symbol);
 			}
 		}
 			// just move the data.
