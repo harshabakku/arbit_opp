@@ -2,10 +2,13 @@
 package nifty.options;
 
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.Reader;
 import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
@@ -30,13 +33,16 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 
+import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 
 public class AlertTradeSignalOptions {
-	// (symbol, (1,2,3 for equity for future,option buy/sell ratio)),
 	public static Map<String, DepthData> ultimateDataMap = new HashMap<String, DepthData>();
 
 	public static Map<String, DepthData> penultimateDataMap = new HashMap<String, DepthData>();
+	
+	public static Map<String, Double> pcrMap = new HashMap<String, Double>();
+	public static Map<String, String> oiDirectionMap = new HashMap<String, String>();
 
 	// use this to fill the individual csvs of stocks that we want to trace more
 	// finer to observe deeper patterns.
@@ -44,10 +50,12 @@ public class AlertTradeSignalOptions {
 	// future buy/sell quantities and ratios
 	public static void main(String[] args) throws Exception {
 
+		loadPCROIData(pcrMap, oiDirectionMap);
+
 		float ivpLimit = 0;
 		String expiryDate = "2020-08-27";
 //			List<String> trackList =  Arrays.asList("CIPLA","NIFTY","RELIANCE", "WIPRO", "SUNPHARMA");
-		List<String> trackList = Arrays.asList("NIFTY","BANKNIFTY","HDFCBANK","JSWSTEEL");
+		List<String> trackList = Arrays.asList("CIPLA","WIPRO","TECHM","HDFC","HDFCBANK","BAJAJFINSV","HINDUNILVR","INDUSINDBK","AXISBANK","KOTAKBANK","BPCL","JSWSTEEL");
 
 //			trackList.add("RELIANCE");
 //			trackList.add("HDFC");
@@ -70,7 +78,31 @@ public class AlertTradeSignalOptions {
 
 				e.printStackTrace();
 			}
-				TimeUnit.SECONDS.sleep(20);
+			TimeUnit.SECONDS.sleep(20);
+		}
+	}
+
+	private static void loadPCROIData(Map<String, Double> pcrMap, Map<String, String> oiDirectionMap)
+			throws FileNotFoundException {
+		String filePath = "./data/" + "OIDirectionPCR" + ".csv";
+
+		File file = new File(filePath);
+		Reader inputfile;
+		CSVReader reader;
+		inputfile = new FileReader(file);
+
+		reader = new CSVReader(inputfile);
+		Iterator<String[]> iterator = reader.iterator();
+
+		// writer data
+		while (iterator.hasNext()) {
+
+			String[] data = iterator.next();
+			String symbol = data[0];
+			String oiDirection = data[1];
+			String pcr = data[2];
+			pcrMap.put(symbol, Double.valueOf(pcr));
+			oiDirectionMap.put(symbol, oiDirection);
 		}
 	}
 
@@ -298,8 +330,8 @@ public class AlertTradeSignalOptions {
 					System.out.println("Alert: total buy sell ratio is unusual");
 					totalBuySellRatio = 0.0F;
 				}
-				alertBuySellRatio(symbol, equityBuySellRatio, futureBuySellRatio, putCallRatio);
-
+//				alertBuySellRatio(symbol, equityBuySellRatio, futureBuySellRatio, putCallRatio);
+				alertOIpcr(symbol,putCallRatio );
 				//////////////////////////////////////// write to csv here
 				String filePath = "./data/" + new Date().getMonth() + "/" + symbol + ".csv";
 
@@ -313,20 +345,22 @@ public class AlertTradeSignalOptions {
 
 				// double check percentChange from gainers losers list every now and then as
 				// calculated from future prevClose of yesterday
-				String[] nextLine = { decimalFormat2.format(totalBuySellRatio) + "", decimalFormat.format(percentChange) + "",
-						decimalFormat.format(optionIVPercentile) + "", decimalFormat.format(optionIV) + "",
-						decimalFormat.format(previousIV) + "", decimalFormat2.format(equityBuySellRatio) + "",
-						decimalFormat2.format(futureBuySellRatio) + "", decimalFormat2.format(putCallRatio) + "",
-						"" + equityBuyQuantity, "" + equitySellQuantity, "" + totalFutureBuyQuantity,
-						"" + totalFutureSellQuantity, underlyingPrice + "", optionStrikePrice + "",
-						optionExpiryDate + "", new Date() + "" };
+				String[] nextLine = { decimalFormat2.format(totalBuySellRatio) + "",
+						decimalFormat.format(percentChange) + "", decimalFormat.format(optionIVPercentile) + "",
+						decimalFormat.format(optionIV) + "", decimalFormat.format(previousIV) + "",
+						decimalFormat2.format(equityBuySellRatio) + "", decimalFormat2.format(futureBuySellRatio) + "",
+						decimalFormat2.format(putCallRatio) + "", "" + equityBuyQuantity, "" + equitySellQuantity,
+						"" + totalFutureBuyQuantity, "" + totalFutureSellQuantity, underlyingPrice + "",
+						optionStrikePrice + "", optionExpiryDate + "", new Date() + "" };
 				writer.writeNext(nextLine);
-				String printString =  decimalFormat2.format(totalBuySellRatio) + "  " + decimalFormat.format(percentChange) + "   "
-						+ decimalFormat.format(optionIVPercentile) + " " + decimalFormat.format(optionIV) + " "
-						+ decimalFormat.format(previousIV) + "   " + decimalFormat2.format(equityBuySellRatio) + " " + decimalFormat2.format(futureBuySellRatio)
-						+ " " + decimalFormat2.format(putCallRatio) + "  " + equityBuyQuantity + " " + equitySellQuantity
-						+ " " + totalFutureBuyQuantity + " " + totalFutureSellQuantity + " " + underlyingPrice + " "
-						+ optionStrikePrice + "  " + optionExpiryDate + "  " + new Date() + "  " + symbol;
+				String printString = decimalFormat2.format(totalBuySellRatio) + "  "
+						+ decimalFormat.format(percentChange) + "   " + decimalFormat.format(optionIVPercentile) + " "
+						+ decimalFormat.format(optionIV) + " " + decimalFormat.format(previousIV) + "   "
+						+ decimalFormat2.format(equityBuySellRatio) + " " + decimalFormat2.format(futureBuySellRatio)
+						+ " " + decimalFormat2.format(putCallRatio) + "  " + equityBuyQuantity + " "
+						+ equitySellQuantity + " " + totalFutureBuyQuantity + " " + totalFutureSellQuantity + " "
+						+ underlyingPrice + " " + optionStrikePrice + "  " + optionExpiryDate + "  " + new Date() + "  "
+						+ symbol;
 //					if(totalBuySellRatio>1.5 || totalBuySellRatio < 0.666) {
 
 				System.out.println(printString);
@@ -338,6 +372,21 @@ public class AlertTradeSignalOptions {
 
 			}
 
+		}
+	}
+
+	private static void alertOIpcr(String symbol, float putCallRatio) {
+		// TODO Auto-generated method stub
+		String oiDirection = oiDirectionMap.get(symbol);
+		Double yestPCR = pcrMap.get(symbol);
+		Double pcrDif = putCallRatio-yestPCR;
+		if(oiDirection.compareTo("BULL")==0 && pcrDif>0) {
+			System.out.println(yestPCR + " "+ putCallRatio);
+			System.out.println("alert: BULL oiDirection and pcrDif +VE aligning for " + symbol);
+		}else if (oiDirection.compareTo("BEAR")==0 && pcrDif<0) {
+			System.out.println(yestPCR + " "+ putCallRatio);
+			System.out.println("alert: BEAR oiDirection and pcrDif -VE aligning for " + symbol);
+			
 		}
 	}
 
@@ -362,10 +411,10 @@ public class AlertTradeSignalOptions {
 //				System.out.println("alert: strong trend: all three ratios FALLING for " + symbol);
 			}
 		}
-			// just move the data.
-			penultimateDataMap.put(symbol, ultimateData);
-			ultimateDataMap.put(symbol, newData);
-		
+		// just move the data.
+		penultimateDataMap.put(symbol, ultimateData);
+		ultimateDataMap.put(symbol, newData);
+
 	}
 
 }
