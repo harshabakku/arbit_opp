@@ -55,7 +55,7 @@ public class AlertTradeSignalOptions {
 		float ivpLimit = 0;
 		String expiryDate = "2020-08-27";
 //			List<String> trackList =  Arrays.asList("CIPLA","NIFTY","RELIANCE", "WIPRO", "SUNPHARMA");
-		List<String> trackList = Arrays.asList("CIPLA","WIPRO","TECHM","HDFC","HDFCBANK","BAJAJFINSV","HINDUNILVR","INDUSINDBK","AXISBANK","KOTAKBANK","BPCL","JSWSTEEL");
+		List<String> trackList = Arrays.asList("NIFTY","BANKNIFTY","RELIANCE","TCS","HINDALCO","ULTRACEMCO","TITAN","EICHERMOT","HCLTECH","HEROMOTOCO","M&M","MARUTI","KOTAKBANK","TATASTEEL");
 
 //			trackList.add("RELIANCE");
 //			trackList.add("HDFC");
@@ -379,12 +379,12 @@ public class AlertTradeSignalOptions {
 		// TODO Auto-generated method stub
 		String oiDirection = oiDirectionMap.get(symbol);
 		Double yestPCR = pcrMap.get(symbol);
-		Double pcrDif = putCallRatio-yestPCR;
-		if(oiDirection.compareTo("BULL")==0 && pcrDif>0) {
-			System.out.println(yestPCR + " "+ putCallRatio);
+		Double pcrDif = Double.valueOf(putCallRatio)-yestPCR;
+		if(oiDirection.contentEquals("BULL")&& Double.compare(pcrDif, Double.valueOf(0.001))>0) {
+			System.out.println(yestPCR + " "+ putCallRatio + "  "+ pcrDif);
 			System.out.println("alert: BULL oiDirection and pcrDif +VE aligning for " + symbol);
-		}else if (oiDirection.compareTo("BEAR")==0 && pcrDif<0) {
-			System.out.println(yestPCR + " "+ putCallRatio);
+		}else if (oiDirection.contentEquals("BEAR") && Double.compare(pcrDif, Double.valueOf(-0.001))<0) {
+			System.out.println(oiDirection + yestPCR + " "+ putCallRatio+ "  "+ pcrDif);
 			System.out.println("alert: BEAR oiDirection and pcrDif -VE aligning for " + symbol);
 			
 		}
