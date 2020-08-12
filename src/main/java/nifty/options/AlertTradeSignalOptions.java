@@ -55,7 +55,7 @@ public class AlertTradeSignalOptions {
 		float ivpLimit = 0;
 		String expiryDate = "2020-08-27";
 //			List<String> trackList =  Arrays.asList("CIPLA","NIFTY","RELIANCE", "WIPRO", "SUNPHARMA");
-		List<String> trackList = Arrays.asList("NIFTY","BANKNIFTY","RELIANCE","TCS","HINDALCO","ULTRACEMCO","TITAN","EICHERMOT","HCLTECH","HEROMOTOCO","M&M","MARUTI","KOTAKBANK","TATASTEEL");
+		List<String> trackList = Arrays.asList("NIFTY","BANKNIFTY","SHREECEM","RELIANCE","DRREDDY","TCS","BPCL","TECHM","HINDALCO","BHARTIARTL","HCLTECH","BRITANNIA","HEROMOTOCO","UPL","INFY");
 
 //			trackList.add("RELIANCE");
 //			trackList.add("HDFC");
@@ -331,7 +331,7 @@ public class AlertTradeSignalOptions {
 					totalBuySellRatio = 0.0F;
 				}
 //				alertBuySellRatio(symbol, equityBuySellRatio, futureBuySellRatio, putCallRatio);
-				alertOIpcr(symbol,putCallRatio );
+				alertOIpcr(symbol,putCallRatio,totalBuySellRatio );
 				//////////////////////////////////////// write to csv here
 				String filePath = "./data/" + new Date().getMonth() + "/" + symbol + ".csv";
 
@@ -375,17 +375,18 @@ public class AlertTradeSignalOptions {
 		}
 	}
 
-	private static void alertOIpcr(String symbol, float putCallRatio) {
+	private static void alertOIpcr(String symbol, float putCallRatio, float totalBuySellRatio) {
 		// TODO Auto-generated method stub
+		//if we can catch fastly rising or falling totalBuySellRatio, there is always a trade.
 		String oiDirection = oiDirectionMap.get(symbol);
 		Double yestPCR = pcrMap.get(symbol);
 		Double pcrDif = Double.valueOf(putCallRatio)-yestPCR;
-		if(oiDirection.contentEquals("BULL")&& Double.compare(pcrDif, Double.valueOf(0.001))>0) {
-			System.out.println(yestPCR + " "+ putCallRatio + "  "+ pcrDif);
-			System.out.println("alert: BULL oiDirection and pcrDif +VE aligning for " + symbol);
-		}else if (oiDirection.contentEquals("BEAR") && Double.compare(pcrDif, Double.valueOf(-0.001))<0) {
-			System.out.println(oiDirection + yestPCR + " "+ putCallRatio+ "  "+ pcrDif);
-			System.out.println("alert: BEAR oiDirection and pcrDif -VE aligning for " + symbol);
+		if(totalBuySellRatio>1.5 && Double.compare(pcrDif, Double.valueOf(0.001))>0) {
+			//System.out.println(yestPCR + " "+ putCallRatio + "  "+ pcrDif);
+			System.out.println("alert: BULL  pcrDif +VE ratio >1.5" + symbol);
+		}else if ( totalBuySellRatio<0.666 && Double.compare(pcrDif, Double.valueOf(-0.001))<0) {
+			//System.out.println(oiDirection + yestPCR + " "+ putCallRatio+ "  "+ pcrDif);
+			System.out.println("alert: BEAR  pcrDif -VE ratio <0.666" + symbol);
 			
 		}
 	}
