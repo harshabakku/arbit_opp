@@ -50,12 +50,11 @@ public class AlertTradeSignalOptions {
 	// future buy/sell quantities and ratios
 	public static void main(String[] args) throws Exception {
 
-		loadPCROIData(pcrMap, oiDirectionMap);
+		List<String> trackList = new ArrayList<String>();
+		loadPCROIData(pcrMap, oiDirectionMap,trackList);
 
 		float ivpLimit = 0;
 		String expiryDate = "2020-08-27";
-//			List<String> trackList =  Arrays.asList("CIPLA","NIFTY","RELIANCE", "WIPRO", "SUNPHARMA");
-		List<String> trackList = Arrays.asList("NIFTY","BANKNIFTY","SHREECEM","RELIANCE","DRREDDY","TCS","BPCL","TECHM","HINDALCO","BHARTIARTL","HCLTECH","BRITANNIA","HEROMOTOCO","UPL","INFY");
 
 //			trackList.add("RELIANCE");
 //			trackList.add("HDFC");
@@ -82,7 +81,7 @@ public class AlertTradeSignalOptions {
 		}
 	}
 
-	private static void loadPCROIData(Map<String, Double> pcrMap, Map<String, String> oiDirectionMap)
+	private static void loadPCROIData(Map<String, Double> pcrMap, Map<String, String> oiDirectionMap, List<String> trackList)
 			throws FileNotFoundException {
 		String filePath = "./data/" + "OIDirectionPCR" + ".csv";
 
@@ -103,6 +102,7 @@ public class AlertTradeSignalOptions {
 			String pcr = data[2];
 			pcrMap.put(symbol, Double.valueOf(pcr));
 			oiDirectionMap.put(symbol, oiDirection);
+			trackList.add(symbol);
 		}
 	}
 
@@ -381,10 +381,10 @@ public class AlertTradeSignalOptions {
 		String oiDirection = oiDirectionMap.get(symbol);
 		Double yestPCR = pcrMap.get(symbol);
 		Double pcrDif = Double.valueOf(putCallRatio)-yestPCR;
-		if(totalBuySellRatio>1.5 && Double.compare(pcrDif, Double.valueOf(0.001))>0 && percentChange > 0.3) {
+		if(totalBuySellRatio>1.4 && Double.compare(pcrDif, Double.valueOf(0.0005))>0 && percentChange > 0.3) {
 			//System.out.println(yestPCR + " "+ putCallRatio + "  "+ pcrDif);
 			System.out.println("alert: BULL  pcrDif +VE ratio >1.5 and percent change +ve " + symbol);
-		}else if ( totalBuySellRatio<0.666 && Double.compare(pcrDif, Double.valueOf(-0.001))<0 && percentChange < -0.3) {
+		}else if ( totalBuySellRatio<0.714 && Double.compare(pcrDif, Double.valueOf(-0.0005))<0 && percentChange < -0.3) {
 			//System.out.println(oiDirection + yestPCR + " "+ putCallRatio+ "  "+ pcrDif);
 			System.out.println("alert: BEAR  pcrDif -VE ratio <.66 and percent change -ve " + symbol);
 			
