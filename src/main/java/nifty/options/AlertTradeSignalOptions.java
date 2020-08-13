@@ -331,7 +331,7 @@ public class AlertTradeSignalOptions {
 					totalBuySellRatio = 0.0F;
 				}
 //				alertBuySellRatio(symbol, equityBuySellRatio, futureBuySellRatio, putCallRatio);
-				alertOIpcr(symbol,putCallRatio,totalBuySellRatio );
+				alertOIpcr(symbol,putCallRatio,totalBuySellRatio,percentChange );
 				//////////////////////////////////////// write to csv here
 				String filePath = "./data/" + new Date().getMonth() + "/" + symbol + ".csv";
 
@@ -375,18 +375,18 @@ public class AlertTradeSignalOptions {
 		}
 	}
 
-	private static void alertOIpcr(String symbol, float putCallRatio, float totalBuySellRatio) {
+	private static void alertOIpcr(String symbol, float putCallRatio, float totalBuySellRatio, Double percentChange) {
 		// TODO Auto-generated method stub
 		//if we can catch fastly rising or falling totalBuySellRatio, there is always a trade.
 		String oiDirection = oiDirectionMap.get(symbol);
 		Double yestPCR = pcrMap.get(symbol);
 		Double pcrDif = Double.valueOf(putCallRatio)-yestPCR;
-		if(totalBuySellRatio>1.5 && Double.compare(pcrDif, Double.valueOf(0.001))>0) {
+		if(totalBuySellRatio>1.5 && Double.compare(pcrDif, Double.valueOf(0.001))>0 && percentChange > 0.3) {
 			//System.out.println(yestPCR + " "+ putCallRatio + "  "+ pcrDif);
-			System.out.println("alert: BULL  pcrDif +VE ratio >1.5" + symbol);
-		}else if ( totalBuySellRatio<0.666 && Double.compare(pcrDif, Double.valueOf(-0.001))<0) {
+			System.out.println("alert: BULL  pcrDif +VE ratio >1.5 and percent change +ve " + symbol);
+		}else if ( totalBuySellRatio<0.666 && Double.compare(pcrDif, Double.valueOf(-0.001))<0 && percentChange < -0.3) {
 			//System.out.println(oiDirection + yestPCR + " "+ putCallRatio+ "  "+ pcrDif);
-			System.out.println("alert: BEAR  pcrDif -VE ratio <0.666" + symbol);
+			System.out.println("alert: BEAR  pcrDif -VE ratio <.66 and percent change -ve " + symbol);
 			
 		}
 	}
