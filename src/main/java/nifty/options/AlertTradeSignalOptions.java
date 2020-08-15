@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -37,12 +38,15 @@ import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 
 public class AlertTradeSignalOptions {
-	public static Map<String, DepthData> ultimateDataMap = new HashMap<String, DepthData>();
+	private static final int shortTermPeriod = 5;
 
-	public static Map<String, DepthData> penultimateDataMap = new HashMap<String, DepthData>();
-	
+	private static final int longTermPeriod = 10;
+
 	public static Map<String, Double> pcrMap = new HashMap<String, Double>();
 	public static Map<String, String> oiDirectionMap = new HashMap<String, String>();
+
+	public static SimpleMovingAverage shortTermSMA = new SimpleMovingAverage(shortTermPeriod);
+	public static SimpleMovingAverage longTermSMA = new SimpleMovingAverage(longTermPeriod);
 
 	// use this to fill the individual csvs of stocks that we want to trace more
 	// finer to observe deeper patterns.
@@ -50,8 +54,10 @@ public class AlertTradeSignalOptions {
 	// future buy/sell quantities and ratios
 	public static void main(String[] args) throws Exception {
 
+		// create two simple moving averages, one short term and one long term
+
 		List<String> trackList = new ArrayList<String>();
-		loadPCROIData(pcrMap, oiDirectionMap,trackList);
+		loadPCROIData(pcrMap, oiDirectionMap, trackList);
 
 		float ivpLimit = 0;
 		String expiryDate = "2020-08-27";
@@ -77,12 +83,12 @@ public class AlertTradeSignalOptions {
 
 				e.printStackTrace();
 			}
-			TimeUnit.SECONDS.sleep(20);
+//			TimeUnit.SECONDS.sleep(10);
 		}
 	}
 
-	private static void loadPCROIData(Map<String, Double> pcrMap, Map<String, String> oiDirectionMap, List<String> trackList)
-			throws FileNotFoundException {
+	private static void loadPCROIData(Map<String, Double> pcrMap, Map<String, String> oiDirectionMap,
+			List<String> trackList) throws FileNotFoundException {
 		String filePath = "./data/" + "OIDirectionPCR" + ".csv";
 
 		File file = new File(filePath);
@@ -330,8 +336,7 @@ public class AlertTradeSignalOptions {
 					System.out.println("Alert: total buy sell ratio is unusual");
 					totalBuySellRatio = 0.0F;
 				}
-//				alertBuySellRatio(symbol, equityBuySellRatio, futureBuySellRatio, putCallRatio);
-				alertOIpcr(symbol,putCallRatio,totalBuySellRatio,percentChange );
+				alertTrade(symbol, putCallRatio, totalBuySellRatio, percentChange);
 				//////////////////////////////////////// write to csv here
 				String filePath = "./data/" + new Date().getMonth() + "/" + symbol + ".csv";
 
@@ -375,47 +380,44 @@ public class AlertTradeSignalOptions {
 		}
 	}
 
-	private static void alertOIpcr(String symbol, float putCallRatio, float totalBuySellRatio, Double percentChange) {
+	private static void alertTrade(String symbol, float putCallRatio, float totalBuySellRatio, Double percentChange) {
+		shortTermSMA.addData(totalBuySellRatio);
+		longTermSMA.addData(totalBuySellRatio);
+		String smaSignal;
+		if (shortTermSMA.getCurrentSize() < shortTermPeriod || longTermSMA.getCurrentSize() < longTermPeriod) {
+			System.out.println("data not ready for calculating shorterm longterm moving averages yet");
+			return;
+		} else {
+			double shortSMA = shortTermSMA.getMean();
+			double longSMA = longTermSMA.getMean();
+
+			if (shortSMA > longSMA) {
+				smaSignal = "BULL";
+				System.out.println("bullish crossover "+ symbol);
+//		   bullishCrossover
+			} else {
+				// bearishCrossover
+				System.out.println("bearish crossover"+ symbol);
+				smaSignal = "BEAR";
+			}
+		}
+
 		// TODO Auto-generated method stub
-		//if we can catch fastly rising or falling totalBuySellRatio, there is always a trade.
-		String oiDirection = oiDirectionMap.get(symbol);
+		// if we can catch fastly rising or falling totalBuySellRatio, there is always a
+		// trade.
+		//oi manual direction is deprecated according to the strategy as it is not making sense anymore
+//		String oiDirection = oiDirectionMap.get(symbol);
 		Double yestPCR = pcrMap.get(symbol);
-		Double pcrDif = Double.valueOf(putCallRatio)-yestPCR;
-		if(totalBuySellRatio>1.4 && Double.compare(pcrDif, Double.valueOf(0.0005))>0 && percentChange > 0.3) {
-			//System.out.println(yestPCR + " "+ putCallRatio + "  "+ pcrDif);
+		Double pcrDif = Double.valueOf(putCallRatio) - yestPCR;
+		if (totalBuySellRatio > 1.4 && Double.compare(pcrDif, Double.valueOf(0.0005)) > 0 && percentChange > 0.3) {
+			// System.out.println(yestPCR + " "+ putCallRatio + " "+ pcrDif);
 			System.out.println("alert: BULL  pcrDif +VE ratio >1.5 and percent change +ve " + symbol);
-		}else if ( totalBuySellRatio<0.714 && Double.compare(pcrDif, Double.valueOf(-0.0005))<0 && percentChange < -0.3) {
-			//System.out.println(oiDirection + yestPCR + " "+ putCallRatio+ "  "+ pcrDif);
+		} else if (totalBuySellRatio < 0.714 && Double.compare(pcrDif, Double.valueOf(-0.0005)) < 0
+				&& percentChange < -0.3) {
+			// System.out.println(oiDirection + yestPCR + " "+ putCallRatio+ " "+ pcrDif);
 			System.out.println("alert: BEAR  pcrDif -VE ratio <.66 and percent change -ve " + symbol);
-			
+
 		}
-	}
-
-	public static void alertBuySellRatio(String symbol, float equityBuySellRatio, float futureBuySellRatio,
-			float putCallRatio) {
-
-		DepthData penUltimateData = penultimateDataMap.get(symbol);
-		DepthData ultimateData = ultimateDataMap.get(symbol);
-		DepthData newData = new DepthData(equityBuySellRatio, futureBuySellRatio, putCallRatio);
-		if (penUltimateData != null && ultimateData != null) {
-//		System.out.println(ultimateData.optionRatio);
-//		System.out.println(penUltimateData.optionRatio);
-
-			if (equityBuySellRatio > penUltimateData.equityRatio && futureBuySellRatio > penUltimateData.futureRatio
-					&& putCallRatio >= penUltimateData.optionRatio) {
-//				System.out.println("alert: strong trend: all three ratios RISING for " + symbol);
-			}
-
-			if (equityBuySellRatio < penUltimateData.equityRatio && futureBuySellRatio < penUltimateData.futureRatio
-					&& putCallRatio <= penUltimateData.optionRatio) {
-
-//				System.out.println("alert: strong trend: all three ratios FALLING for " + symbol);
-			}
-		}
-		// just move the data.
-		penultimateDataMap.put(symbol, ultimateData);
-		ultimateDataMap.put(symbol, newData);
-
 	}
 
 }
