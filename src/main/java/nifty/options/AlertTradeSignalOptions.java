@@ -47,7 +47,6 @@ public class AlertTradeSignalOptions {
 	private static final int longTermPeriod = 6;
 
 	public static Map<String, Double> pcrMap = new HashMap<String, Double>();
-	public static Map<String, String> oiDirectionMap = new HashMap<String, String>();
 
 	public static Map<String, SimpleMovingAverage> shortTermSMAMap = new HashMap<String, SimpleMovingAverage>();
 	public static Map<String, SimpleMovingAverage> longTermSMAMap = new HashMap<String, SimpleMovingAverage>();
@@ -61,7 +60,7 @@ public class AlertTradeSignalOptions {
 		// create two simple moving averages, one short term and one long term
 
 		List<String> trackList = new ArrayList<String>();
-		loadPCROIData(pcrMap, oiDirectionMap, trackList);
+		loadPCROIData(pcrMap, trackList);
 
 		float ivpLimit = 0;
 		String expiryDate = "2020-08-27";
@@ -91,7 +90,7 @@ public class AlertTradeSignalOptions {
 		}
 	}
 
-	private static void loadPCROIData(Map<String, Double> pcrMap, Map<String, String> oiDirectionMap,
+	private static void loadPCROIData(Map<String, Double> pcrMap,
 			List<String> trackList) throws FileNotFoundException {
 		String filePath = "./data/" + "OIDirectionPCR" + ".csv";
 
@@ -108,10 +107,9 @@ public class AlertTradeSignalOptions {
 
 			String[] data = iterator.next();
 			String symbol = data[0];
-			String oiDirection = data[1];
-			String pcr = data[2];
+			//no more oiDirection being used
+			String pcr = data[1];
 			pcrMap.put(symbol, Double.valueOf(pcr));
-			oiDirectionMap.put(symbol, oiDirection);
 			trackList.add(symbol);
 		}
 	}

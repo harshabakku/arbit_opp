@@ -45,8 +45,13 @@ public class CollectYesterdayPCR {
 		// need to automate at some point
 		String expiryDate = "2020-08-27";
 
-		Iterator<String[]> iterator = reader.iterator();
+		List<String> trackList = new ArrayList<String>();
+		Map<String, JSONObject> IVData = AlertTradeSignalOptions.getIVPercentileData(expiryDate, 77, trackList);
+		Iterator<String> iterator = IVData.keySet().iterator();
+		// trackList being returned empty here
+		// Iterator<String> iterator = trackList.iterator();
 
+//		System.out.println(IVData);
 		// writer data
 		String outfilePath = "./data/" + "OIDirectionPCR" + ".csv";
 
@@ -56,31 +61,27 @@ public class CollectYesterdayPCR {
 		outputfile = new FileWriter(outFile, true);
 
 		writer = new CSVWriter(outputfile);
-		JSONObject pcrData = getPCRData();
+		// get all PCR data at once instead of doing too many same api calls for the
+		// same data
+//		JSONObject pcrData = getPCRData();
 		while (iterator.hasNext()) {
-			String[] nextLine = iterator.next();
-			String symbol = nextLine[0];
-			String oiDirection = nextLine[1];
+			String symbol = iterator.next();
 
-			
-
-			JSONObject symbolIVData = (JSONObject) ((JSONObject) ((JSONObject) pcrData.get(symbol)).get("per_expiry_data"))
-					.get(expiryDate);
-//				if(symbolIVData == null) {
+			JSONObject symbolIVData = IVData.get(symbol);
+//			System.out.println(IVData);
+////				if(symbolIVData == null) {
 ////				data does not exist for this expiry date for this symbol
 //					continue;
 //				}
 
 			float putCallRatio = Float.valueOf(symbolIVData.get("pcr").toString());
-			
-			String[] nextLine2 = {symbol, oiDirection, putCallRatio+ ""};
-			System.out.println(symbol+ oiDirection + putCallRatio);
+
+			String[] nextLine2 = { symbol, putCallRatio + "" };
+			System.out.println(symbol + " " + putCallRatio);
 			writer.writeNext(nextLine2);
 
-			
 		}
 		writer.close();
-		reader.close();
 
 	}
 
@@ -91,7 +92,6 @@ public class CollectYesterdayPCR {
 		Map<String, JSONObject> ivData = new HashMap<String, JSONObject>();
 		// System.out.println("jsonObject returned" + jsonObject);
 		JSONObject data = (JSONObject) jsonObject.get("data");
-
 
 		return data;
 	}
