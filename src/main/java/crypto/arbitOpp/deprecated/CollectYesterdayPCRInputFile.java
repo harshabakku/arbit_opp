@@ -1,5 +1,5 @@
 
-package nifty.options;
+package crypto.arbitOpp.deprecated;
 
 import java.io.File;
 import java.io.FileReader;
@@ -35,7 +35,7 @@ import org.json.simple.parser.ParseException;
 import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 
-public class CollectYesterdayPCR {
+public class CollectYesterdayPCRInputFile {
 
 	// use this to fill the individual csvs of stocks that we want to trace more
 	// finer to observe deeper patterns.
@@ -44,7 +44,15 @@ public class CollectYesterdayPCR {
 	public static void main(String[] args) throws Exception {
 		// need to automate at some point
 		String expiryDate = "2020-08-27";
+		String filePath = "./data/" + "OIDirection" + ".csv";
 
+		System.out.println("sdljf");
+		File file = new File(filePath);
+		Reader inputfile;
+		CSVReader reader;
+		inputfile = new FileReader(file);
+
+		reader = new CSVReader(inputfile);
 		Iterator<String[]> iterator = reader.iterator();
 
 		// writer data

@@ -1,4 +1,4 @@
-package nifty.options;
+package crypto.arbitOpp.deprecated;
 
 public class DepthData {
 
