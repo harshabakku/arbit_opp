@@ -38,15 +38,19 @@ import com.opencsv.CSVReader;
 import com.opencsv.CSVWriter;
 
 public class AlertTradeSignalOptions {
-	private static final int shortTermPeriod = 5;
 
-	private static final int longTermPeriod = 10;
+	// nobody knows what is ideal here, longTermPeriod should be higher according to
+	// me. but also we can also back test and identify these numbers for each symbol
+	// and keep updating them with algo continuous learning/backtesting
+	private static final int shortTermPeriod = 3;
+
+	private static final int longTermPeriod = 6;
 
 	public static Map<String, Double> pcrMap = new HashMap<String, Double>();
 	public static Map<String, String> oiDirectionMap = new HashMap<String, String>();
 
-	public static SimpleMovingAverage shortTermSMA = new SimpleMovingAverage(shortTermPeriod);
-	public static SimpleMovingAverage longTermSMA = new SimpleMovingAverage(longTermPeriod);
+	public static Map<String, SimpleMovingAverage> shortTermSMAMap = new HashMap<String, SimpleMovingAverage>();
+	public static Map<String, SimpleMovingAverage> longTermSMAMap = new HashMap<String, SimpleMovingAverage>();
 
 	// use this to fill the individual csvs of stocks that we want to trace more
 	// finer to observe deeper patterns.
@@ -381,6 +385,19 @@ public class AlertTradeSignalOptions {
 	}
 
 	private static void alertTrade(String symbol, float putCallRatio, float totalBuySellRatio, Double percentChange) {
+
+		SimpleMovingAverage shortTermSMA = shortTermSMAMap.get(symbol);
+		SimpleMovingAverage longTermSMA = longTermSMAMap.get(symbol);
+		if (shortTermSMA == null) {
+			shortTermSMA = new SimpleMovingAverage(shortTermPeriod);
+			shortTermSMAMap.put(symbol, shortTermSMA);
+		}
+
+		if (longTermSMA == null) {
+			longTermSMA = new SimpleMovingAverage(longTermPeriod);
+			longTermSMAMap.put(symbol, longTermSMA);
+		}
+
 		shortTermSMA.addData(totalBuySellRatio);
 		longTermSMA.addData(totalBuySellRatio);
 		String smaSignal;
@@ -391,13 +408,13 @@ public class AlertTradeSignalOptions {
 			double shortSMA = shortTermSMA.getMean();
 			double longSMA = longTermSMA.getMean();
 
-			if (shortSMA > longSMA) {
+			if (Double.compare(shortSMA, longSMA) > 0) {
 				smaSignal = "BULL";
-				System.out.println("bullish crossover "+ symbol);
+				System.out.println("bullish crossover: " + symbol + " " + shortSMA + " " + longSMA);
 //		   bullishCrossover
 			} else {
 				// bearishCrossover
-				System.out.println("bearish crossover"+ symbol);
+				System.out.println("bearish crossover" + symbol + " " + shortSMA + " " + longSMA);
 				smaSignal = "BEAR";
 			}
 		}
@@ -405,7 +422,8 @@ public class AlertTradeSignalOptions {
 		// TODO Auto-generated method stub
 		// if we can catch fastly rising or falling totalBuySellRatio, there is always a
 		// trade.
-		//oi manual direction is deprecated according to the strategy as it is not making sense anymore
+		// oi manual direction is deprecated according to the strategy as it is not
+		// making sense anymore
 //		String oiDirection = oiDirectionMap.get(symbol);
 		Double yestPCR = pcrMap.get(symbol);
 		Double pcrDif = Double.valueOf(putCallRatio) - yestPCR;
