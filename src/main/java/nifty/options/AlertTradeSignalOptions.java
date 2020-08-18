@@ -408,11 +408,11 @@ public class AlertTradeSignalOptions {
 
 			if (Double.compare(shortSMA, longSMA) > 0) {
 				smaSignal = "BULL";
-				System.out.println("bullish crossover: " + symbol + " " + shortSMA + " " + longSMA);
+//				System.out.println("bullish crossover: " + symbol + " " + shortSMA + " " + longSMA);
 //		   bullishCrossover
 			} else {
 				// bearishCrossover
-				System.out.println("bearish crossover" + symbol + " " + shortSMA + " " + longSMA);
+//				System.out.println("bearish crossover: " + symbol + " " + shortSMA + " " + longSMA);
 				smaSignal = "BEAR";
 			}
 		}
@@ -425,11 +425,11 @@ public class AlertTradeSignalOptions {
 //		String oiDirection = oiDirectionMap.get(symbol);
 		Double yestPCR = pcrMap.get(symbol);
 		Double pcrDif = Double.valueOf(putCallRatio) - yestPCR;
-		if (totalBuySellRatio > 1.4 && Double.compare(pcrDif, Double.valueOf(0.0005)) > 0 && percentChange > 0.3) {
+		if (smaSignal.contentEquals("BULL") && totalBuySellRatio > 1.3 && Double.compare(pcrDif, Double.valueOf(0.0005)) > 0 && percentChange > 0.2) {
 			// System.out.println(yestPCR + " "+ putCallRatio + " "+ pcrDif);
 			System.out.println("alert: BULL  pcrDif +VE ratio >1.5 and percent change +ve " + symbol);
-		} else if (totalBuySellRatio < 0.714 && Double.compare(pcrDif, Double.valueOf(-0.0005)) < 0
-				&& percentChange < -0.3) {
+		} else if (smaSignal.contentEquals("BEAR")&& totalBuySellRatio < 0.769 && Double.compare(pcrDif, Double.valueOf(-0.0005)) < 0
+				&& percentChange < -0.2) {
 			// System.out.println(oiDirection + yestPCR + " "+ putCallRatio+ " "+ pcrDif);
 			System.out.println("alert: BEAR  pcrDif -VE ratio <.66 and percent change -ve " + symbol);
 
