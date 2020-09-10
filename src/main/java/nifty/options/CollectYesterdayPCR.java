@@ -43,15 +43,17 @@ public class CollectYesterdayPCR {
 	// future buy/sell quantities and ratios
 	public static void main(String[] args) throws Exception {
 		// need to automate at some point
-		String expiryDate = "2020-08-27";
+		String expiryDate = AlertTradeSignalOptions.expiryDate;
+//		System.out.println(expiryDate);
 
-		List<String> trackList = new ArrayList<String>();
+		List<String> trackList = Arrays.asList("NIFTY","BANKNIFTY","HDFCBANK","ICICIBANK","KOTAKBANK","AXISBANK","SBIN","INDUSINDBK","BANDHANBNK");
 		Map<String, JSONObject> IVData = AlertTradeSignalOptions.getIVPercentileData(expiryDate, 77, trackList);
-		Iterator<String> iterator = IVData.keySet().iterator();
-		// trackList being returned empty here
-		// Iterator<String> iterator = trackList.iterator();
+//		Iterator<String> iterator = IVData.keySet().iterator();
+//		// trackList being returned empty here
 
 //		System.out.println(IVData);
+		
+		 Iterator<String> iterator = trackList.iterator();
 		// writer data
 		String outfilePath = "./data/" + "OIDirectionPCR" + ".csv";
 

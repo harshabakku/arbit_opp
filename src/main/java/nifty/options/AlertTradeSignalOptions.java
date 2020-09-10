@@ -51,6 +51,8 @@ public class AlertTradeSignalOptions {
 	public static Map<String, SimpleMovingAverage> shortTermSMAMap = new HashMap<String, SimpleMovingAverage>();
 	public static Map<String, SimpleMovingAverage> longTermSMAMap = new HashMap<String, SimpleMovingAverage>();
 
+	public static String expiryDate = "2020-09-24";
+
 	// use this to fill the individual csvs of stocks that we want to trace more
 	// finer to observe deeper patterns.
 	// cant be done for cause it takes more than 40 sec already before including
@@ -63,7 +65,6 @@ public class AlertTradeSignalOptions {
 		loadPCROIData(pcrMap, trackList);
 
 		float ivpLimit = 0;
-		String expiryDate = "2020-08-27";
 
 //			trackList.add("RELIANCE");
 //			trackList.add("HDFC");
@@ -114,6 +115,7 @@ public class AlertTradeSignalOptions {
 		}
 	}
 
+	//trackList trumps ivpLimit
 	public static Map<String, JSONObject> getIVPercentileData(String expiryDate, float ivpLimit, List<String> trackList)
 			throws Exception {
 		String url = "https://api.sensibull.com/v1/instrument_details";
@@ -136,6 +138,7 @@ public class AlertTradeSignalOptions {
 			JSONObject symbolIVData = (JSONObject) ((JSONObject) ((JSONObject) data.get(symbol)).get("per_expiry_data"))
 					.get(expiryDate);
 			if (symbolIVData == null) {
+				System.out.println("symbolIVData does not exist check expiryDate");
 //				data does not exist for this expiry date for this symbol
 				continue;
 			}
@@ -186,6 +189,7 @@ public class AlertTradeSignalOptions {
 		}
 		String url = "https://www.nseindia.com/api/quote-equity?symbol=" + symbol + "&section=trade_info";
 //			System.out.println(url);
+		
 		JSONObject jsonObject = getResponse(url);
 		// System.out.println(jsonObject);
 		return (JSONObject) jsonObject.get("marketDeptOrderBook");
@@ -244,8 +248,8 @@ public class AlertTradeSignalOptions {
 					} catch (Exception e) {
 						equityBuySellRatio = 0.0F;
 					}
-					Float equityMarketCap = Float
-							.valueOf(((JSONObject) equityDepthData.get("tradeInfo")).get("totalMarketCap").toString());
+//					Float equityMarketCap = Float
+//							.valueOf(((JSONObject) equityDepthData.get("tradeInfo")).get("totalMarketCap").toString());
 
 					// if there are stocks in trackList, do not filter using IV, OI liquidity,
 					// equity marketCap
@@ -253,12 +257,12 @@ public class AlertTradeSignalOptions {
 						// filter based on equity market cap only if tracklist is empty.
 //					System.out.println(equityMarketCap);
 //					System.out.println((float) 19582869);
-						if (!(equityMarketCap.compareTo((float) 19582869) > 0)) {
-							// reliance data used as a base here.
-
-							// skip the stock that does not have enough market cap
-							continue;
-						}
+//						if (!(equityMarketCap.compareTo((float) 19582869) > 0)) {
+//							// reliance data used as a base here.
+//
+//							// skip the stock that does not have enough market cap
+//							continue;
+//						}
 
 					}
 				}
@@ -301,6 +305,7 @@ public class AlertTradeSignalOptions {
 						JSONObject otherInfo = (JSONObject) marketDepthData.get("otherInfo");
 						//
 						if (percentChange == null) {
+//							System.out.println(stockMetadata);
 							Double lastPrice = Double.valueOf(stockMetadata.get("lastPrice").toString());
 							Double prevClose = Double.valueOf(stockMetadata.get("prevClose").toString());
 							percentChange = ((lastPrice - prevClose) / prevClose) * 100.0;
@@ -400,7 +405,7 @@ public class AlertTradeSignalOptions {
 		longTermSMA.addData(totalBuySellRatio);
 		String smaSignal;
 		if (shortTermSMA.getCurrentSize() < shortTermPeriod || longTermSMA.getCurrentSize() < longTermPeriod) {
-			System.out.println("data not ready for calculating shorterm longterm moving averages yet");
+//			System.out.println("data not ready for calculating shorterm longterm moving averages yet");
 			return;
 		} else {
 			double shortSMA = shortTermSMA.getMean();
@@ -425,11 +430,13 @@ public class AlertTradeSignalOptions {
 //		String oiDirection = oiDirectionMap.get(symbol);
 		Double yestPCR = pcrMap.get(symbol);
 		Double pcrDif = Double.valueOf(putCallRatio) - yestPCR;
-		if (smaSignal.contentEquals("BULL") && totalBuySellRatio > 1.3 && Double.compare(pcrDif, Double.valueOf(0.0005)) > 0 && percentChange > 0.2) {
+//		smaSignal.contentEquals("BEAR")&& totalBuySellRatio < 0.769 &&  && percentChange > 0.2
+		//smaSignal.contentEquals("BULL") && totalBuySellRatio > 1.3 &&&& percentChange < -0.2
+		if ( Double.compare(pcrDif, Double.valueOf(0.0005)) > 0) {
 			// System.out.println(yestPCR + " "+ putCallRatio + " "+ pcrDif);
 			System.out.println("alert: BULL  pcrDif +VE ratio >1.5 and percent change +ve " + symbol);
-		} else if (smaSignal.contentEquals("BEAR")&& totalBuySellRatio < 0.769 && Double.compare(pcrDif, Double.valueOf(-0.0005)) < 0
-				&& percentChange < -0.2) {
+		} else if ( Double.compare(pcrDif, Double.valueOf(-0.0005)) < 0
+				) {
 			// System.out.println(oiDirection + yestPCR + " "+ putCallRatio+ " "+ pcrDif);
 			System.out.println("alert: BEAR  pcrDif -VE ratio <.66 and percent change -ve " + symbol);
 
